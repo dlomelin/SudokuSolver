@@ -7,7 +7,6 @@ def main():
 	sudokuObj = Sudoku(file=params.puzzle)
 	sudokuObj.solve()
 
-	print '         Solution'
 	print sudokuObj
 
 ###

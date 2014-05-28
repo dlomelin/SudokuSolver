@@ -1,5 +1,6 @@
-from SudokuSolver.modules.utilities import instantiateMatrix
+from SudokuSolver.modules.utilities import instantiateMatrix, rowColIter
 
+# Class that represents a 3x3 sudoku block with 9 cells
 class SudokuBlock(object):
 	def __init__(self, numList):
 		self.__validateNumList(numList)
@@ -7,28 +8,48 @@ class SudokuBlock(object):
 		self.__loadNoteNumbers()
 		self.__eliminateKnownNumbers()
 
+	##################
+	# Public Methods #
+	##################
+
+	# Checks if the block contains 9 unique numbers.
+	# Returns True if so, False otherwise.
 	def valid(self):
 		validSolution = True
-		validNums = {}
-		for row in range(3):
-			for col in range(3):
-				num = self.value(row, col)
-				if not num:
-					validSolution = False
-				else:
-					validNums[num] = True
+		validNums = set()
+
+		# Iterate through each of the 9 cells
+		for row, col in rowColIter(3):
+			# Check if there is a valid digit in the cell
+			num = self.value(row, col)
+			if num:
+				validNums.add(num)
+			else:
+				validSolution = False
+				break
+
+		# Checks if there are 9 unique numbers
 		if len(validNums) != 9:
 			validSolution = False
+
 		return validSolution
 
+	# Checks all 9 cells in the block and returns
+	# True if each one has a digit, False otherwise.
 	def complete(self):
 		allComplete = True
-		for row in range(3):
-			for col in range(3):
-				if not self.value(row, col):
-					allComplete = False
+
+		# Iterate through each of the 9 cells
+		for row, col in rowColIter(3):
+			# Check if the cell contains a digit
+			if not self.value(row, col):
+				allComplete = False
+				break
+
 		return allComplete
 
+	# Returns the assigned value for the cell if one
+	# exists; otherwise returns None
 	def value(self, row, col):
 		value = None
 		if self.__values[row][col].isdigit():
@@ -50,36 +71,39 @@ class SudokuBlock(object):
 
 	@staticmethod
 	def numDict():
-		return dict({'1': True, '2': True, '3': True,
-						 '4': True, '5': True, '6': True,
-						 '7': True, '8': True, '9': True,
-						})
+		return dict(
+			{'1': True, '2': True, '3': True,
+			'4': True, '5': True, '6': True,
+			'7': True, '8': True, '9': True,
+			}
+		)
 
 	@staticmethod
 	def numDictList():
-		return dict({'1': [], '2': [], '3': [],
-						 '4': [], '5': [], '6': [],
-						 '7': [], '8': [], '9': [],
-						})
+		return dict(
+			{'1': [], '2': [], '3': [],
+			'4': [], '5': [], '6': [],
+			'7': [], '8': [], '9': [],
+			}
+		)
 
 	###################
 	# Private Methods #
 	###################
 
 	def __eliminateKnownNumbers(self):
-		for row in range(3):
-			for col in range(3):
-				if self.value(row, col):
-					self.clearNotes(row, col)
+		# Iterate through each of the 9 cells
+		for row, col in rowColIter(3):
+			if self.value(row, col):
+				self.clearNotes(row, col)
 
 	def __loadNoteNumbers(self):
 		self.__noteNums = instantiateMatrix()
-		for row in range(3):
-			for col in range(3):
-				self.__noteNums[row][col] = self.numDict()
+		# Iterate through each of the 9 cells
+		for row, col in rowColIter(3):
+			self.__noteNums[row][col] = self.numDict()
 
-	@staticmethod
-	def __validateNumList(numList):
+	def __validateNumList(self, numList):
 		listLen = len(numList)
 		if listLen != 3:
 			raise Exception('Invalid number of lists passed to SudokuBlock object.  Must contain 3 lists.')
