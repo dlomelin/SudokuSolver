@@ -1,13 +1,12 @@
-def instantiateMatrix():
+def instantiateMatrix(size):
 	matrix = []
-	for i in range(3):
+	for i in range(size):
 		matrix.append([])
-		matrix[i].append([])
-		matrix[i].append([])
-		matrix[i].append([])
+		for j in range(size):
+			matrix[i].append([])
 	return matrix
 
-def rowColIter(num):
-	for row in range(num):
-		for col in range(num):
-			yield row, col
+def doubleIter(num):
+	for x in range(num):
+		for y in range(num):
+			yield x, y
