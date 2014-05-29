@@ -1,9 +1,15 @@
 import os
 
-from SudokuSolver.modules.utilities import instantiateMatrix, rowColIter
+from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter
 from SudokuSolver.modules.SudokuBlock import SudokuBlock
 
-# TODO reduce code for row/col operations
+# TODO
+# make file loading a bit more robust (' ', '.', '' empty lines = unassigned spaces)
+# __eq__ to compare two sudoku puzzles for unit testing
+# unit testing for SudokuBlock
+# Modularize reduce methods into their own classes?
+# work on __reduceMultipleLines() http://www.sudokuoftheday.com/pages/techniques-5.php
+# Remove hardcoded square size 3 and pass argument to SudokuBlock (test size 2?)
 
 class Sudoku(object):
 	def __init__(self, **args):
@@ -13,9 +19,21 @@ class Sudoku(object):
 		# Parses file with starting Sudoku numbers and loads object
 		self.__loadFromFile(args['file'])
 
+		# Mark this puzzle as unsolved
+		self.__setSolvedFalse()
+
+		print self
+
 	def __str__(self):
-		string = '         Solution\n'
-		string += '%s\n' % (self.__rowDelimeter())
+		rowDelimeter = self.__rowDelimeter()
+
+		# Create a header and center it
+		if self.__puzzleSolved():
+			status = 'Solution'.center(len(rowDelimeter))
+		else:
+			status = 'Incomplete'.center(len(rowDelimeter))
+
+		string = '%s\n%s\n' % (status, rowDelimeter)
 
 		for matRow in range(3):
 			for row in range(3):
@@ -28,7 +46,7 @@ class Sudoku(object):
 						string += '%s ' % (num)
 					string += '| '
 				string += '\n'
-			string += '%s\n' % (self.__rowDelimeter())
+			string += '%s\n' % (rowDelimeter)
 
 		return string
 
@@ -37,8 +55,13 @@ class Sudoku(object):
 	##################
 
 	def solve(self):
+		# Mark this puzzle as unsolved
+		self.__setSolvedFalse()
 
 		while True:
+			# Mark this as a new iteration without changes
+			# Any modifications to the puzzle will mark the puzzle as changed
+			# otherwise the loop will quit
 			self.__setChangeFalse()
 
 			# Assign numbers based on a row or column requiring all 9 numbers
@@ -52,6 +75,9 @@ class Sudoku(object):
 
 			# Reduce numbers based on naked pairs/trios
 			self.__reduceNakedSets()
+
+			# Reduce numbers based on multiple lines
+			self.__reduceMultipleLines()
 
 			if not self.__puzzleChanged():
 				break
@@ -67,6 +93,7 @@ class Sudoku(object):
 		self.__checkValidBlocks()
 		self.__checkValidRows()
 		self.__checkValidCols()
+		self.__setSolvedTrue()
 
 	# Checks if every cell has been filled in with a number.
 	# Does not check if the numbers are valid though.
@@ -74,7 +101,7 @@ class Sudoku(object):
 		allComplete = True
 
 		# Iterate through each of the 9 blocks
-		for blockRow, blockCol in rowColIter(3):
+		for blockRow, blockCol in doubleIter(3):
 			# Check if the block is complete
 			if not self.matrix[blockRow][blockCol].complete():
 				allComplete = False
@@ -93,9 +120,9 @@ class Sudoku(object):
 					for blockCol in range(3):
 						for col in range(3):
 							numString = ''
-							noteNums = self.matrix[blockRow][blockCol].noteNumsDict(row, col)
+							noteNums = self.matrix[blockRow][blockCol].getNoteNumbers(row, col)
 							for num in noteSets[i]:
-								if noteNums.has_key(num):
+								if num in noteNums:
 									numString += '%s' % (num)
 								else:
 									numString += ' '
@@ -111,7 +138,7 @@ class Sudoku(object):
 					print self.__rowSplit()
 
 	def value(self, blockRow, blockCol, row, col):
-		return self.matrix[blockRow][blockCol].value(row, col)
+		return self.matrix[blockRow][blockCol].getValue(row, col)
 
 	###################
 	# Private Methods #
@@ -134,6 +161,9 @@ class Sudoku(object):
 		self.__reduceNakedSetRow()
 		self.__reduceNakedSetCol()
 		self.__reduceNakedSetBlock()
+
+	def __reduceMultipleLines(self):
+		pass
 
 	def __reduceNakedSetRow(self):
 		allCoordinates = self.__rowCoordinates()
@@ -158,7 +188,7 @@ class Sudoku(object):
 				row = unitCoords[2]
 				col = unitCoords[3]
 
-				noteNums = self.matrix[blockRow][blockCol].noteNumsDict(row, col)
+				noteNums = self.matrix[blockRow][blockCol].getNoteNumbers(row, col)
 				if noteNums:
 					noteCoords.append((blockRow, blockCol, row, col))
 					noteList.append(noteNums)
@@ -198,10 +228,10 @@ class Sudoku(object):
 						if len(uniqueNums) == 4:
 							self.__removeNakedSetNotes(uniqueNums, coordinates, noteCoords, [i, j, k, l])
 
-	def __combineNotes(self, list, coords):
+	def __combineNotes(self, setList, coords):
 		uniqueNums = {}
 		for indexNum in coords:
-			for num in list[indexNum].keys():
+			for num in list(setList[indexNum]):
 				uniqueNums[num] = True
 		return uniqueNums
 
@@ -229,35 +259,29 @@ class Sudoku(object):
 
 	def __rowCoordinates(self):
 		coordinates = []
-		for blockRow in range(3):
-			for row in range(3):
-				rowCoords = []
-				for blockCol in range(3):
-					for col in range(3):
-						rowCoords.append((blockRow, blockCol, row, col))
-				coordinates.append(rowCoords)
+		for blockRow, row in doubleIter(3):
+			rowCoords = []
+			for blockCol, col in doubleIter(3):
+				rowCoords.append((blockRow, blockCol, row, col))
+			coordinates.append(rowCoords)
 		return coordinates
 
 	def __colCoordinates(self):
 		coordinates = []
-		for blockCol in range(3):
-			for col in range(3):
-				colCoords = []
-				for blockRow in range(3):
-					for row in range(3):
-						colCoords.append((blockRow, blockCol, row, col))
-				coordinates.append(colCoords)
+		for blockCol, col in doubleIter(3):
+			colCoords = []
+			for blockRow, row in doubleIter(3):
+				colCoords.append((blockRow, blockCol, row, col))
+			coordinates.append(colCoords)
 		return coordinates
 
 	def __blockCoordinates(self):
 		coordinates = []
-		for blockRow in range(3):
-			for blockCol in range(3):
-				blockCoords = []
-				for row in range(3):
-					for col in range(3):
-						blockCoords.append((blockRow, blockCol, row, col))
-				coordinates.append(blockCoords)
+		for blockRow, blockCol in doubleIter(3):
+			blockCoords = []
+			for row, col in doubleIter(3):
+				blockCoords.append((blockRow, blockCol, row, col))
+			coordinates.append(blockCoords)
 		return coordinates
 
 	def __reduceXwing(self):
@@ -266,11 +290,11 @@ class Sudoku(object):
 
 	def __removeNumber(self, num, blockRow, blockCol, row, col):
 
-		noteNums = self.matrix[blockRow][blockCol].noteNumsDict(row, col)
-		if noteNums.has_key(num):
-			self.matrix[blockRow][blockCol].removeNumber(num, row, col)
+		noteNums = self.matrix[blockRow][blockCol].getNoteNumbers(row, col)
+		if num in noteNums:
+			self.matrix[blockRow][blockCol].deleteNoteNumber(num, row, col)
 
-			nums = noteNums.keys()
+			nums = list(noteNums)
 			if len(nums) == 1:
 				self.__setValue(nums[0], blockRow, blockCol, row, col)
 			self.__setChangeTrue()
@@ -316,7 +340,7 @@ class Sudoku(object):
 			row = unitCoords[2]
 			col = unitCoords[3]
 
-			noteNums = self.matrix[blockRow][blockCol].noteNumsDict(row, col)
+			noteNums = self.matrix[blockRow][blockCol].getNoteNumbers(row, col)
 			for num in noteNums:
 				hintCoords[num].append((row, col))
 
@@ -337,7 +361,7 @@ class Sudoku(object):
 	def __assignSumNumbers(self, allCoordinates):
 		for coordinates in allCoordinates:
 			# Generate list of numbers that can fill out the remaining empty squares
-			requiredNums = SudokuBlock.numDict()
+			requiredNums = SudokuBlock.numberSet()
 			for unitCoords in coordinates:
 				blockRow = unitCoords[0]
 				blockCol = unitCoords[1]
@@ -346,7 +370,7 @@ class Sudoku(object):
 
 				self.__removeReqNum(requiredNums, blockRow, blockCol, row, col)
 
-			for reqNum in requiredNums.keys():
+			for reqNum in requiredNums:
 				# Check if there is only 1 position that can fill that number
 				posCount = 0
 				posBlockRow = None
@@ -361,8 +385,8 @@ class Sudoku(object):
 
 					# If that position was already assigned a number then skip it
 					if not self.value(blockRow, blockCol, row, col):
-						noteNums = self.matrix[blockRow][blockCol].noteNumsDict(row, col)
-						if noteNums.has_key(reqNum):
+						noteNums = self.matrix[blockRow][blockCol].getNoteNumbers(row, col)
+						if reqNum in noteNums:
 							posCount += 1
 							posBlockRow = blockRow
 							posBlockCol = blockCol
@@ -380,7 +404,7 @@ class Sudoku(object):
 		self.matrix[blockRow][blockCol].setValue(num, row, col)
 
 		# clears out available notes from the position whose value was just set
-		self.matrix[blockRow][blockCol].clearNotes(row, col)
+		self.matrix[blockRow][blockCol].clearNoteNumbers(row, col)
 
 		# clear out values within the block
 		self.__clearBlockNoteNumber(blockRow, blockCol, num)
@@ -396,22 +420,27 @@ class Sudoku(object):
 		#print '----------'
 
 	def __puzzleChanged(self):
-		return self.__newChange
-		
+		return self.__changeStatus
 	def __setChangeTrue(self):
-		self.__newChange = True
+		self.__changeStatus = True
 	def __setChangeFalse(self):
-		self.__newChange = False
+		self.__changeStatus = False
+
+	def __puzzleSolved(self):
+		return self.__solvedStatus
+	def __setSolvedTrue(self):
+		self.__solvedStatus = True
+	def __setSolvedFalse(self):
+		self.__solvedStatus = False
 
 	def __clearBlockNoteNumber(self, blockRow, blockCol, num):
-		for row in range(3):
-			for col in range(3):
-				self.__removeNumber(num, blockRow, blockCol, row, col)
+		for row, col in doubleIter(3):
+			self.__removeNumber(num, blockRow, blockCol, row, col)
 
 	def __removeReqNum(self, requiredNums, blockRow, blockCol, row, col):
 		num = self.value(blockRow, blockCol, row, col)
-		if num and requiredNums.has_key(num):
-			del requiredNums[num]
+		if num:
+			requiredNums.discard(num)
 
 	# if position has an assigned value, then remove notes for all rows/columns
 	def __cleanAssignedValue(self, blockRow, blockCol, row, col):
@@ -440,7 +469,7 @@ class Sudoku(object):
 
 	def __loadFromFile(self, file):
 		if os.path.isfile(file):
-			tempMatrix = instantiateMatrix()
+			tempMatrix = instantiateMatrix(3)
 			currentRow = 0
 
 			fhIn = open(file, 'rU')
@@ -462,19 +491,16 @@ class Sudoku(object):
 			raise Exception('%s is not a valid file or does not exist.' % (file))
 
 	def __instantiateSudokuMatrix(self, tempMatrix):
-		self.matrix = instantiateMatrix()
+		self.matrix = instantiateMatrix(3)
 		# Iterate through each of the 9 blocks
-		for blockRow, blockCol in rowColIter(3):
+		for blockRow, blockCol in doubleIter(3):
 			self.matrix[blockRow][blockCol] = SudokuBlock(tempMatrix[blockRow][blockCol])
-
-		print '     Starting Puzzle'
-		print self
 
 		self.__clearInitialValueNotes()
 
 	def __clearInitialValueNotes(self):
 		# Iterate through each of the 9 blocks
-		for blockRow, blockCol in rowColIter(3):
+		for blockRow, blockCol in doubleIter(3):
 			# Reduce numbers within the SudokuBlock based on initial values
 			for num in self.__validBlockNums(blockRow, blockCol):
 				self.__clearBlockNoteNumber(blockRow, blockCol, num)
@@ -485,7 +511,7 @@ class Sudoku(object):
 	def __validBlockNums(self, blockRow, blockCol):
 		validNums = {}
 		# Iterate through each of the 9 cells in blockRow, blockCol
-		for row, col in rowColIter(3):
+		for row, col in doubleIter(3):
 			num = self.value(blockRow, blockCol, row, col)
 			if num:
 				validNums[num] = True
@@ -493,7 +519,7 @@ class Sudoku(object):
 
 	def __reduceRowColNotes(self, blockRow, blockCol):
 		# Iterate through each of the 9 cells in blockRow, blockCol
-		for row, col in rowColIter(3):
+		for row, col in doubleIter(3):
 			self.__cleanAssignedValue(blockRow, blockCol, row, col)
 
 	###
@@ -552,7 +578,7 @@ class Sudoku(object):
 				row = unitCoords[2]
 				col = unitCoords[3]
 
-				noteNums = self.matrix[blockRow][blockCol].noteNumsDict(row, col)
+				noteNums = self.matrix[blockRow][blockCol].getNoteNumbers(row, col)
 				for num in noteNums:
 					hintCoords[num].append((blockRow, blockCol, row, col))
 
@@ -563,11 +589,10 @@ class Sudoku(object):
 		return potentialXwings
 
 	def __removeXwingRow(self, num, blockRow, row, blockCol1Skip, col1Skip, blockCol2Skip, col2Skip):
-		for blockCol in range(3):
-			for col in range(3):
-				if self.__skip(blockCol, col, blockCol1Skip, col1Skip) or self.__skip(blockCol, col, blockCol2Skip, col2Skip):
-					continue
-				self.__removeNumber(num, blockRow, blockCol, row, col)
+		for blockCol, col in doubleIter(3):
+			if self.__skip(blockCol, col, blockCol1Skip, col1Skip) or self.__skip(blockCol, col, blockCol2Skip, col2Skip):
+				continue
+			self.__removeNumber(num, blockRow, blockCol, row, col)
 
 	def __reduceXwingCol(self):
 
@@ -611,55 +636,50 @@ class Sudoku(object):
 							self.__removeXwingRow(num, blockRow1_2, row1_2, blockCol1_1, col1_1, blockCol2_1, col2_1)
 
 	def __removeXwingCol(self, num, blockCol, col, blockRow1Skip, row1Skip, blockRow2Skip, row2Skip):
-		for blockRow in range(3):
-			for row in range(3):
-				if self.__skip(blockRow, row, blockRow1Skip, row1Skip) or self.__skip(blockRow, row, blockRow2Skip, row2Skip):
-					continue
-				self.__removeNumber(num, blockRow, blockCol, row, col)
+		for blockRow, row in doubleIter(3):
+			if self.__skip(blockRow, row, blockRow1Skip, row1Skip) or self.__skip(blockRow, row, blockRow2Skip, row2Skip):
+				continue
+			self.__removeNumber(num, blockRow, blockCol, row, col)
 
 	# Private methods associated with ensuring completed puzzles are valid
 
 	def __checkValidBlocks(self):
 		# Iterate through each of the 9 blocks to make sure each one has 9 unique numbers
-		for blockRow, blockCol in rowColIter(3):
+		for blockRow, blockCol in doubleIter(3):
 			if not self.matrix[blockRow][blockCol].valid():
 				print self
 				raise Exception('Completed puzzle is not a valid solution.  Block (%s,%s) contains duplicate entries.  Check the code.' % (blockRow, blockCol))
 
 	def __checkValidRows(self):
 		# Checks that rows have 9 unique numbers
-		for blockRow in range(3):
-			for row in range(3):
-				if not self.__validRow(blockRow, row):
-					print self
-					raise Exception('Completed puzzle is not a valid solution.  Row (%s,%s) contains duplicate entries.  Check the code.' % (blockRow, row))
+		for blockRow, row in doubleIter(3):
+			if not self.__validRow(blockRow, row):
+				print self
+				raise Exception('Completed puzzle is not a valid solution.  Row (%s,%s) contains duplicate entries.  Check the code.' % (blockRow, row))
 
 	def __validRow(self, blockRow, row):
 		validSolution = True
 		validNums = {}
-		for blockCol in range(3):
-			for col in range(3):
-				num = self.value(blockRow, blockCol, row, col)
-				validNums[num] = True
+		for blockCol, col in doubleIter(3):
+			num = self.value(blockRow, blockCol, row, col)
+			validNums[num] = True
 		if len(validNums) != 9:
 			validSolution = False
 		return validSolution
 
 	def __checkValidCols(self):
 		# Checks that columns have 9 unique numbers
-		for blockCol in range(3):
-			for col in range(3):
-				if not self.__validCol(blockCol, col):
-					print self
-					raise Exception('Completed puzzle is not a valid solution.  Column (%s,%s) contains duplicate entries.  Check the code.' % (blockCol, col))
+		for blockCol, col in doubleIter(3):
+			if not self.__validCol(blockCol, col):
+				print self
+				raise Exception('Completed puzzle is not a valid solution.  Column (%s,%s) contains duplicate entries.  Check the code.' % (blockCol, col))
 
 	def __validCol(self, blockCol, col):
 		validSolution = True
 		validNums = {}
-		for blockRow in range(3):
-			for row in range(3):
-				num = self.value(blockRow, blockCol, row, col)
-				validNums[num] = True
+		for blockRow, row in doubleIter(3):
+			num = self.value(blockRow, blockCol, row, col)
+			validNums[num] = True
 		if len(validNums) != 9:
 			validSolution = False
 		return validSolution
