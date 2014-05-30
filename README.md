@@ -11,7 +11,7 @@ $ python solveSudoku.py --puzzle [puzzleFile]
 
 ## Input File Format
 
-Place starting numbers into a 9x9 grid separated by spaces for unknown positions.
+Place starting numbers into a 9x9 grid.  Unknown positions can be declared with a space or period.
 Example input files can also be found in the inputFiles directory.
 
 ```
