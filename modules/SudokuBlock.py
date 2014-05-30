@@ -1,16 +1,17 @@
-from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter
+from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet
 
 # Class that represents a NxN sudoku block with N^2 cells
 class SudokuBlock(object):
-	SQUARE_SIZE = 3
-	CELL_COUNT = SQUARE_SIZE ** 2
-
 	def __init__(self, numList):
-		# Make sure the values passed in are in a valid format
-		self.__validateNumList(numList)
+		# Set the values to what the user passed in, which should be a list of lists
+		# Ex: [['9', '7', ' '], [' ', ' ', ' '], ['5', '6', '3']]
+		self.__storeValues(numList)
 
-		# Set the values to what the user passed in
-		self.__values = numList
+		# Store data related to the data that was passed in
+		self.__storeSquareData()
+
+		# Make sure the values passed in are in a valid format
+		self.__validateNumList()
 
 		# Creates new notes for each of the N^2 cells
 		self.__createNoteNumbers()
@@ -18,18 +19,21 @@ class SudokuBlock(object):
 		# Remove all notes for cells that have been assigned a number
 		self.__eliminateKnownNumbers()
 
+	def __eq__(self, other):
+		return self.__values == other.__values
+
 	##################
 	# Public Methods #
 	##################
 
-	# Checks if the block contains N^2 unique numbers.
+	# Checks if every cell in the block contains a unique number.
 	# Returns True if so, False otherwise.
 	def valid(self):
 		validSolution = True
 		validNums = set()
 
 		# Iterate through each of the N^2 cells
-		for row, col in doubleIter(self.SQUARE_SIZE):
+		for row, col in doubleIter(self.__squareSize):
 			# Check if there is a valid digit in the cell
 			num = self.getValue(row, col)
 			if num:
@@ -39,18 +43,18 @@ class SudokuBlock(object):
 				break
 
 		# Checks if there are N^2 unique numbers
-		if len(validNums) != self.CELL_COUNT:
+		if len(validNums) != self.__cellCount:
 			validSolution = False
 
 		return validSolution
 
-	# Checks all N^2 cells in the block and returns
-	# True if each one has a digit, False otherwise.
+	# Checks if every cell in the block contains a number.
+	# Returns True if so, False otherwise.
 	def complete(self):
 		allComplete = True
 
 		# Iterate through each of the N^2 cells
-		for row, col in doubleIter(self.SQUARE_SIZE):
+		for row, col in doubleIter(self.__squareSize):
 			# Check if the cell contains a digit
 			if not self.getValue(row, col):
 				allComplete = False
@@ -68,7 +72,7 @@ class SudokuBlock(object):
 
 	# Sets the number at position (row, col)
 	def setValue(self, num, row, col):
-		self.__values[row][col] = num
+		self.__values[row][col] = str(num)
 
 	##
 	# NOTE METHODS BELOW
@@ -85,46 +89,31 @@ class SudokuBlock(object):
 
 	# Deletes a number from a given set of notes at position (row, col)
 	def deleteNoteNumber(self, num, row, col):
-		self.__noteNums[row][col].discard(num)
+		self.__noteNums[row][col].discard(str(num))
 
 	# Deletes all numbers for a set of notes
 	def clearNoteNumbers(self, row, col):
 		self.__noteNums[row][col] = set()
 
-	##################
-	# Static Methods #
-	##################
-
-	# Returns a set of numbers from 1-N^2
-	@staticmethod
-	def numberSet():
-		numList = []
-		for x in SudokuBlock.cellIdIter():
-			numList.append(x)
-		return set(numList)
-
-	# Returns a dictionary with keys being numbers 1-N^2 and values as empty lists
-	@staticmethod
-	def numDictList():
-		dictList = {}
-		for x in SudokuBlock.cellIdIter():
-			dictList[x] = []
-		return dictList
-
-	# Iterator that yields numbers 1-squareSize^2
-	@staticmethod
-	def cellIdIter():
-		for x in map(str, range(1, SudokuBlock.CELL_COUNT+1)):
-			yield x
-
 	###################
 	# Private Methods #
 	###################
 
+	def __storeValues(self, numList):
+		self.__values = numList
+		for i in range(len(self.__values)):
+			for j in range(len(self.__values[i])):
+				self.__values[i][j] = str(self.__values[i][j])
+
+	# Stores information related to the size of the input data
+	def __storeSquareData(self):
+		self.__squareSize = len(self.__values)
+		self.__cellCount = self.__squareSize ** 2
+
 	# Remove all notes for cells that have been assigned a number
 	def __eliminateKnownNumbers(self):
 		# Iterate through each of the N^2 cells
-		for row, col in doubleIter(self.SQUARE_SIZE):
+		for row, col in doubleIter(self.__squareSize):
 			# Remove all notes for the cell if it has been assigned a number
 			if self.getValue(row, col):
 				self.clearNoteNumbers(row, col)
@@ -132,25 +121,25 @@ class SudokuBlock(object):
 	# Creates new notes for each of the N^2 cells
 	def __createNoteNumbers(self):
 		# Creates a NxN matrix.  Each cell will have its own set of notes
-		self.__noteNums = instantiateMatrix(self.SQUARE_SIZE)
+		self.__noteNums = instantiateMatrix(self.__squareSize)
 
 		# Iterate through each of the N^2 cells and assign a new set of notes
-		for row, col in doubleIter(self.SQUARE_SIZE):
-			self.__noteNums[row][col] = self.numberSet()
+		for row, col in doubleIter(self.__squareSize):
+			self.__noteNums[row][col] = numberSet(self.__squareSize)
 
 	# Make sure the values passed in are in a valid format
-	def __validateNumList(self, numList):
+	def __validateNumList(self):
 		# Make sure the correct number of lists are passed in
-		listLen = len(numList)
-		if listLen != self.SQUARE_SIZE:
-			raise Exception('Invalid number of lists passed to SudokuBlock object.  Must contain %s lists.' % (self.SQUARE_SIZE))
+		listLen = len(self.__values)
+		if listLen != self.__squareSize:
+			raise Exception('Invalid number of lists passed to SudokuBlock object.  Must contain %s lists.' % (self.__squareSize))
 
 		numCount = 0
 		numSet = set()
-		for itemList in numList:
+		for itemList in self.__values:
 			itemLen = len(itemList)
-			if itemLen != self.SQUARE_SIZE:
-				raise Exception('Invalid number of items passed to SudokuBlock object.  Must contain %s items.' % (self.SQUARE_SIZE))
+			if itemLen != self.__squareSize:
+				raise Exception('Invalid number of items passed to SudokuBlock object.  Must contain %s items.' % (self.__squareSize))
 			for num in itemList:
 				if num.isdigit():
 					numCount += 1
