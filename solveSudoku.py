@@ -5,8 +5,9 @@ def main():
 	params = getParams()
 
 	sudokuObj = Sudoku(file=params.puzzle)
-	sudokuObj.solve()
+	print sudokuObj
 
+	sudokuObj.solve()
 	print sudokuObj
 
 ###
