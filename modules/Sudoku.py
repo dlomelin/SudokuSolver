@@ -12,12 +12,11 @@ from SudokuSolver.modules.SudokuBlock import SudokuBlock
 class Sudoku(object):
 	def __init__(self, **args):
 
-		# Make sure required arguments were passed in
-		fieldsToCheck = ['file']
-		self.__checkParameters(fieldsToCheck, args)
+		# Make sure one of the required arguments was passed in
+		fieldsToCheck = set(['file', 'data'])
+		self.__checkInputParameters(fieldsToCheck, args)
 
-		# Parses file with starting Sudoku numbers and loads object
-		self.__loadFromFile(args['file'])
+		self.__loadInputData(args)
 
 		# Mark this puzzle as unsolved
 		self.__setSolvedFalse()
@@ -152,7 +151,7 @@ class Sudoku(object):
 							else:
 								colSplit = '|'
 							fhOut.write(' %s %s' % (numString, colSplit))
-					print
+					fhOut.write('\n')
 				if row == 2:
 					fhOut.write('%s\n' % (self.__blockRowSplit()))
 				else:
@@ -165,13 +164,23 @@ class Sudoku(object):
 	# Private Methods #
 	###################
 
-	def __checkParameters(self, requiredList, data):
-		missingFields = []
-		for field in requiredList:
-			if not field in data:
-				missingFields.append('The following required field was not provided: %s' % (field))
+	def __checkInputParameters(self, fieldsToCheck, args):
+		# Check if one of the required parameters was supplied
+		missingFields = True
+		for field in args:
+			if field in fieldsToCheck:
+				missingFields = False
+
 		if missingFields:
-			raise Exception('\n'.join(missingFields))
+			raise Exception('One of the following required fields was not provided: %s' % (','.join(fieldsToCheck)))
+
+	def __loadInputData(self, args):
+		if 'file' in args:
+			# Parses file with starting Sudoku numbers and loads object
+			self.__loadFromFile(args['file'])
+		elif 'data' in args:
+			# Parses list of lists with starting Sudoku numbers and loads object
+			self.__loadFromData(args['data'])
 
 	def __rowSplit(self):
 		return '-----------------------------------------------------------'
@@ -497,6 +506,7 @@ class Sudoku(object):
 			for line in fhIn:
 				nums = self.__parseFileLine(line)
 
+				# Every 3 lines get incremented
 				if self.__currentRowFull(tempMatrix, currentRow):
 					currentRow += 1
 
@@ -509,6 +519,21 @@ class Sudoku(object):
 
 		else:
 			raise Exception('%s is not a valid file or does not exist.' % (file))
+
+	def __loadFromData(self, data):
+		tempMatrix = instantiateMatrix(3)
+		currentRow = 0
+
+		for nums in data:
+			# Every 3 lines get incremented
+			if self.__currentRowFull(tempMatrix, currentRow):
+				currentRow += 1
+
+			tempMatrix[currentRow][0].append(nums[0:3])
+			tempMatrix[currentRow][1].append(nums[3:6])
+			tempMatrix[currentRow][2].append(nums[6:9])
+
+		self.__instantiateSudokuMatrix(tempMatrix)
 
 	def __parseFileLine(self, line):
 		# Strip newline character
@@ -682,14 +707,14 @@ class Sudoku(object):
 		for blockRow, blockCol in doubleIter(3):
 			if not self.__matrix[blockRow][blockCol].valid():
 				print self
-				raise Exception('Completed puzzle is not a valid solution.  Block (%s,%s) contains duplicate entries.  Check the code.' % (blockRow, blockCol))
+				raise Exception('Completed puzzle is not a valid solution.  Block (%s,%s) contains duplicate entries.  Check the code to remove bugs.' % (blockRow, blockCol))
 
 	def __checkValidRows(self):
 		# Checks that rows have 9 unique numbers
 		for blockRow, row in doubleIter(3):
 			if not self.__validRow(blockRow, row):
 				print self
-				raise Exception('Completed puzzle is not a valid solution.  Row (%s,%s) contains duplicate entries.  Check the code.' % (blockRow, row))
+				raise Exception('Completed puzzle is not a valid solution.  Row (%s,%s) contains duplicate entries.  Check the code to remove bugs.' % (blockRow, row))
 
 	def __validRow(self, blockRow, row):
 		validSolution = True
