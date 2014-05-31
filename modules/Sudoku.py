@@ -16,6 +16,7 @@ class Sudoku(object):
 		fieldsToCheck = set(['file', 'data'])
 		self.__checkInputParameters(fieldsToCheck, args)
 
+		# Loads the user specified data
 		self.__loadInputData(args)
 
 		# Mark this puzzle as unsolved
@@ -60,6 +61,7 @@ class Sudoku(object):
 	# Public Methods #
 	##################
 
+	# Returns a list of lists with the current grid values
 	def gridValues(self):
 		values = []
 
@@ -174,6 +176,7 @@ class Sudoku(object):
 		if missingFields:
 			raise Exception('One of the following required fields was not provided: %s' % (','.join(fieldsToCheck)))
 
+	# Loads the user specified data
 	def __loadInputData(self, args):
 		if 'file' in args:
 			# Parses file with starting Sudoku numbers and loads object
@@ -499,27 +502,22 @@ class Sudoku(object):
 
 	def __loadFromFile(self, file):
 		if os.path.isfile(file):
-			tempMatrix = instantiateMatrix(3)
-			currentRow = 0
+			data = []
 
+			# Converts file contents into a list of lists
 			fhIn = open(file, 'rU')
 			for line in fhIn:
 				nums = self.__parseFileLine(line)
-
-				# Every 3 lines get incremented
-				if self.__currentRowFull(tempMatrix, currentRow):
-					currentRow += 1
-
-				tempMatrix[currentRow][0].append(nums[0:3])
-				tempMatrix[currentRow][1].append(nums[3:6])
-				tempMatrix[currentRow][2].append(nums[6:9])
+				data.append(nums)
 			fhIn.close()
 
-			self.__instantiateSudokuMatrix(tempMatrix)
+			# Loads data from a list of lists
+			self.__loadFromData(data)
 
 		else:
 			raise Exception('%s is not a valid file or does not exist.' % (file))
 
+	# Loads data from a list of lists
 	def __loadFromData(self, data):
 		tempMatrix = instantiateMatrix(3)
 		currentRow = 0
