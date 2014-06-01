@@ -5,10 +5,21 @@ def main():
 	params = getParams()
 
 	sudokuObj = Sudoku(file=params.puzzle)
+
+	# Prints starting values
 	print sudokuObj
 
+	# Solve the puzzle
 	sudokuObj.solve()
+
+	# If the solver was unable to fill in all cells
+	# then print out the final notes
+	if not sudokuObj.complete():
+		sudokuObj.printNotes()
+
+	# Prints out final values after solving
 	print sudokuObj
+
 
 ###
 
