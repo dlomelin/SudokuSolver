@@ -99,6 +99,9 @@ class SudokuBlock(object):
 	# Private Methods #
 	###################
 
+	###### START
+	# __init__ methods
+	#
 	def __storeValues(self, numList):
 		self.__values = numList
 		for i in range(len(self.__values)):
@@ -109,23 +112,6 @@ class SudokuBlock(object):
 	def __storeSquareData(self):
 		self.__squareSize = len(self.__values)
 		self.__cellCount = self.__squareSize ** 2
-
-	# Remove all notes for cells that have been assigned a number
-	def __eliminateKnownNumbers(self):
-		# Iterate through each of the N^2 cells
-		for row, col in doubleIter(self.__squareSize):
-			# Remove all notes for the cell if it has been assigned a number
-			if self.getValue(row, col):
-				self.clearNoteNumbers(row, col)
-
-	# Creates new notes for each of the N^2 cells
-	def __createNoteNumbers(self):
-		# Creates a NxN matrix.  Each cell will have its own set of notes
-		self.__noteNums = instantiateMatrix(self.__squareSize)
-
-		# Iterate through each of the N^2 cells and assign a new set of notes
-		for row, col in doubleIter(self.__squareSize):
-			self.__noteNums[row][col] = numberSet(self.__squareSize)
 
 	# Make sure the values passed in are in a valid format
 	def __validateNumList(self):
@@ -147,3 +133,24 @@ class SudokuBlock(object):
 		numLen = len(numSet)
 		if numLen != numCount:
 			raise Exception('Duplicate numbers pre-assigned to SudokuBlock object.')
+
+	# Creates new notes for each of the N^2 cells
+	def __createNoteNumbers(self):
+		# Creates a NxN matrix.  Each cell will have its own set of notes
+		self.__noteNums = instantiateMatrix(self.__squareSize)
+
+		# Iterate through each of the N^2 cells and assign a new set of notes
+		for row, col in doubleIter(self.__squareSize):
+			self.__noteNums[row][col] = numberSet(self.__squareSize)
+
+	# Remove all notes for cells that have been assigned a number
+	def __eliminateKnownNumbers(self):
+		# Iterate through each of the N^2 cells
+		for row, col in doubleIter(self.__squareSize):
+			# Remove all notes for the cell if it has been assigned a number
+			if self.getValue(row, col):
+				self.clearNoteNumbers(row, col)
+	#
+	# __init__ methods
+	###### END
+
