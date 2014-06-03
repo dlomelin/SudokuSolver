@@ -4,11 +4,6 @@ from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, number
 from SudokuSolver.modules.SudokuBlock import SudokuBlock
 from SudokuSolver.modules.SudokuCoordinates import SudokuCoordinates
 
-# TODO
-# Modularize reduce methods into their own classes?
-# work on __reduceMultipleLines() http://www.sudokuoftheday.com/pages/techniques-5.php
-# Remove hardcoded square size 3 and pass argument to SudokuBlock (test size 2?)
-
 class Sudoku(object):
 	def __init__(self, **args):
 
@@ -61,7 +56,8 @@ class Sudoku(object):
 	# Public Methods #
 	##################
 
-	# Returns a list of lists with the current grid values
+	# Returns a list of lists with the current grid values.
+	# Unknown positions are represented by a period.
 	def gridValues(self):
 		values = []
 
@@ -253,6 +249,27 @@ class Sudoku(object):
 
 			# Let the solver know changes were made
 			self.__setChangeTrue()
+
+	# Iterate through each cell, determine which numbers have already been
+	# assigned, and remove them from the list of unassigned numbers
+	def __findUnassignedNums(self, cellCoordinatesList):
+		# Create a list of all possible numbers that can be assigned to the current set of cells
+		unassignedNums = numberSet(3)
+
+		# Iterate through each cell and extract the coordinates
+		for cellCoords in cellCoordinatesList:
+
+			# Remove the already assigned number in the current cell from the list of possible numbers
+			num = self.getCellValue(
+				cellCoords.blockRow,
+				cellCoords.blockCol,
+				cellCoords.row,
+				cellCoords.col,
+			)
+			if num:
+				unassignedNums.discard(num)
+
+		return unassignedNums
 	#
 	# Shared methods
 	###### END
@@ -358,12 +375,12 @@ class Sudoku(object):
 			self.__reduceRowColNotes(blockRow, blockCol)
 
 	def __validBlockNums(self, blockRow, blockCol):
-		validNums = {}
+		validNums = set()
 		# Iterate through each of the 9 cells in blockRow, blockCol
 		for row, col in doubleIter(3):
 			num = self.getCellValue(blockRow, blockCol, row, col)
 			if num:
-				validNums[num] = True
+				validNums.add(num)
 		return validNums
 
 	def __reduceRowColNotes(self, blockRow, blockCol):
@@ -448,27 +465,6 @@ class Sudoku(object):
 						availableCellCoords.row,
 						availableCellCoords.col,
 					)
-
-	# Iterate through each cell, determine which numbers have already been
-	# assigned, and remove them from the list of unassigned numbers
-	def __findUnassignedNums(self, cellCoordinatesList):
-		# Create a list of all possible numbers that can be assigned to the current set of cells
-		unassignedNums = numberSet(3)
-
-		# Iterate through each cell and extract the coordinates
-		for cellCoords in cellCoordinatesList:
-
-			# Remove the already assigned number in the current cell from the list of possible numbers
-			num = self.getCellValue(
-				cellCoords.blockRow,
-				cellCoords.blockCol, 
-				cellCoords.row, 
-				cellCoords.col,
-			)
-			if num:
-				unassignedNums.discard(num)
-
-		return unassignedNums
 	#
 	# __setSingletons methods
 	###### END
@@ -713,17 +709,17 @@ class Sudoku(object):
 							self.__removeNakedSetNotes(uniqueNums, cellCoordinatesList, noteCoords, [i, j, k, l])
 
 	def __combineNotes(self, setList, coords):
-		uniqueNums = {}
+		uniqueNums = set()
 		for indexNum in coords:
 			for num in list(setList[indexNum]):
-				uniqueNums[num] = True
+				uniqueNums.add(num)
 		return uniqueNums
 
 	def __removeNakedSetNotes(self, removeNums, cellCoordinatesList, skipCoords, skipCoordsIndex):
 		for cellCoords in cellCoordinatesList:
 
 			if not self.__skipCoords(skipCoords, skipCoordsIndex, cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col):
-				for num in removeNums.keys():
+				for num in removeNums:
 					self.__clearCellNoteNumberAndSet(num, cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col)
 
 	def __skipCoords(self, skipCoords, skipIndex, blockRow, blockCol, row, col):
@@ -744,7 +740,86 @@ class Sudoku(object):
 	# __reduceMultipleLines methods
 	#
 	def __reduceMultipleLines(self):
-		pass
+
+		# Iterate through each block
+		for cellCoordinatesList in self.__blockCellCoordsIter():
+
+			# Extract the current block coordinates
+			blockRow = cellCoordinatesList[0].blockRow
+			blockCol = cellCoordinatesList[0].blockCol
+
+			# Generate list of numbers that can still be assigned to the
+			# remaining cells in the row or column
+			unassignedNums = self.__findUnassignedNums(cellCoordinatesList)
+
+			# Look for rows/columns that share the unassigned number in pairs of rows
+			for num in unassignedNums:
+
+				# Identify the rows in the current block that can have the number eliminted from the notes
+				sharedRows = self.__findSharedLinesByRow(num, blockRow, blockCol)
+				if sharedRows:
+
+					# Remove the number from the cell's notes
+					for row in sharedRows:
+						for col in range(3):
+							self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
+
+				# Identify the columns in the current block that can have the number eliminted from the notes
+				sharedCols = self.__findSharedLinesByCol(num, blockRow, blockCol)
+				if sharedCols:
+
+					# Remove the number from the cell's notes
+					for col in sharedCols:
+						for row in range(3):
+							self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
+
+	# Identify the rows in the current block that can have the number eliminted from the notes
+	def __findSharedLinesByRow(self, num, blockRow, blockCol):
+		sharedRows = set()
+		affectedBlocks = set()
+
+		# Iterate through the remaining columns except for the starting one
+		for blockColLoop in filter(lambda x: x != blockCol, range(3)):
+
+			# Iterate through each cell in the block
+			for row, col in doubleIter(3):
+
+				# Check the cell's notes if num can be placed here.  If it can, track the row and block
+				noteNums = self.getCellNotes(blockRow, blockColLoop, row, col)
+				if num in noteNums:
+					sharedRows.add(row)
+					affectedBlocks.add(blockColLoop)
+
+		# Criteria for the multiple lines technique is that there are 2 shared rows
+		# across 2 blocks with the same number.
+		if len(sharedRows) == 2 and len(affectedBlocks) == 2:
+			return sharedRows
+		else:
+			return set()
+
+	# Identify the columns in the current block that can have the number eliminted from the notes
+	def __findSharedLinesByCol(self, num, blockRow, blockCol):
+		sharedCols = set()
+		affectedBlocks = set()
+
+		# Iterate through the remaining rows except for the starting one
+		for blockRowLoop in filter(lambda x: x != blockRow, range(3)):
+
+			# Iterate through each cell in the block
+			for row, col in doubleIter(3):
+
+				# Check the cell's notes if num can be placed here.  If it can, track the column and block
+				noteNums = self.getCellNotes(blockRowLoop, blockCol, row, col)
+				if num in noteNums:
+					sharedCols.add(col)
+					affectedBlocks.add(blockRowLoop)
+
+		# Criteria for the multiple lines technique is that there are 2 shared columns
+		# across 2 blocks with the same number.
+		if len(sharedCols) == 2 and len(affectedBlocks) == 2:
+			return sharedCols
+		else:
+			return set()
 	#
 	# __reduceMultipleLines methods
 	###### END
@@ -812,20 +887,20 @@ class Sudoku(object):
 
 	def __validRow(self, blockRow, row):
 		validSolution = True
-		validNums = {}
+		validNums = set()
 		for blockCol, col in doubleIter(3):
 			num = self.getCellValue(blockRow, blockCol, row, col)
-			validNums[num] = True
+			validNums.add(num)
 		if len(validNums) != 9:
 			validSolution = False
 		return validSolution
 
 	def __validCol(self, blockCol, col):
 		validSolution = True
-		validNums = {}
+		validNums = set()
 		for blockRow, row in doubleIter(3):
 			num = self.getCellValue(blockRow, blockCol, row, col)
-			validNums[num] = True
+			validNums.add(num)
 		if len(validNums) != 9:
 			validSolution = False
 		return validSolution
