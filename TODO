@@ -1,0 +1,4 @@
+- Add unique rectangle technique
+- Add forcing chain technique
+- Find a technique to solve the puzzleExtreme.txt puzzle
+- Generalize to any size grid.  Currently hardcoded to 3
