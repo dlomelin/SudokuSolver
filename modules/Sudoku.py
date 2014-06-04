@@ -1,6 +1,6 @@
 import os, sys
 
-from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList
+from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList, pairwiseIter
 from SudokuSolver.modules.SudokuBlock import SudokuBlock
 from SudokuSolver.modules.SudokuCoordinates import SudokuCoordinates
 
@@ -417,10 +417,10 @@ class Sudoku(object):
 	#
 	def __setSingletons(self):
 		# Assign singletons within rows
-		self.__setSingletonNotes(self.__rowCellCoordsIter)
+		self.__setSingletonNotes(self.__rowCoordsIter)
 
 		# Assign singletons within columns
-		self.__setSingletonNotes(self.__colCellCoordsIter)
+		self.__setSingletonNotes(self.__columnCoordsIter)
 
 	def __setSingletonNotes(self, coordIter):
 
@@ -518,86 +518,81 @@ class Sudoku(object):
 
 	def __reduceXwingRow(self):
 
-		potentialXwings = self.__possibleRowXwings()
+		potentialXwings = self.__potentialXwings(self.__rowCoordsIter)
+
 		for num in potentialXwings:
-			itemLen = len(potentialXwings[num])
-			if itemLen > 1:
-				# Performs all pairwise combinations looking for valid xwings
-				for i in range(itemLen-1):
-					for j in range(i+1,itemLen):
-						row1 = potentialXwings[num][i]
-						row2 = potentialXwings[num][j]
+			for data1, data2 in pairwiseIter(potentialXwings[num]):
 
-						blockRow1 = row1[0].blockRow
-						blockRow2 = row2[0].blockRow
-						blockCol1_1 = row1[0].blockCol
-						blockCol2_1 = row2[0].blockCol
-						blockCol1_2 = row1[1].blockCol
-						blockCol2_2 = row2[1].blockCol
-						row1_1 = row1[0].row
-						row2_1 = row2[0].row
-						col1_1 = row1[0].col
-						col2_1 = row2[0].col
-						col1_2 = row1[1].col
-						col2_2 = row2[1].col
+				# Ensures the 4 cells properly align to form xwing cells
+				if self.__validXwingRowCells(data1[0], data1[1], data2[0], data2[1]):
 
-						# Ensures the rows are in different blockRows
-						# Ensures the columns are in the same blockColumns
-						# Ensures the columns are in the same columns
-						if blockRow1 != blockRow2 and \
-							blockCol1_1 == blockCol2_1 and blockCol1_2 == blockCol2_2 and \
-							col1_1 == col2_1 and col1_2 == col2_2:
-							self.__removeXwingCol(num, blockCol1_1, col1_1, blockRow1, row1_1, blockRow2, row2_1)
-							self.__removeXwingCol(num, blockCol1_2, col1_2, blockRow1, row1_1, blockRow2, row2_1)
+					self.__removeXwingNotes(
+						self.__colCellCoordsIter,
+						num,
+						data1[0].blockCol,
+						data1[0].col,
+						data1[0],
+						data2[0],
+					)
+
+					self.__removeXwingNotes(
+						self.__colCellCoordsIter,
+						num,
+						data1[1].blockCol,
+						data1[1].col,
+						data1[1],
+						data2[1],
+					)
 
 	def __reduceXwingCol(self):
 
-		potentialXwings = self.__possibleColXwings()
+		potentialXwings = self.__potentialXwings(self.__columnCoordsIter)
+
 		for num in potentialXwings:
-			itemLen = len(potentialXwings[num])
-			if itemLen > 1:
-				# Performs all pairwise combinations looking for valid xwings
-				for i in range(itemLen-1):
-					for j in range(i+1,itemLen):
-						row1 = potentialXwings[num][i]
-						row2 = potentialXwings[num][j]
+			for data1, data2 in pairwiseIter(potentialXwings[num]):
 
-						blockRow1_1 = row1[0].blockRow
-						blockRow2_1 = row2[0].blockRow
-						blockRow1_2 = row1[1].blockRow
-						blockRow2_2 = row2[1].blockRow
+				# Ensures the 4 cells properly align to form xwing cells
+				if self.__validXwingColCells(data1[0], data1[1], data2[0], data2[1]):
 
-						blockCol1_1 = row1[0].blockCol
-						blockCol2_1 = row2[0].blockCol
-						blockCol1_2 = row1[1].blockCol
-						blockCol2_2 = row2[1].blockCol
+					self.__removeXwingNotes(
+						self.__rowCellCoordsIter,
+						num,
+						data1[0].blockRow,
+						data1[0].row,
+						data1[0],
+						data2[0],
+					)
 
-						row1_1 = row1[0].row
-						row2_1 = row2[0].row
-						row1_2 = row1[1].row
-						row2_2 = row2[1].row
+					self.__removeXwingNotes(
+						self.__rowCellCoordsIter,
+						num,
+						data1[1].blockRow,
+						data1[1].row,
+						data1[1],
+						data2[1],
+					)
 
-						col1_1 = row1[0].col
-						col2_1 = row2[0].col
-						col1_2 = row1[1].col
-						col2_2 = row2[1].col
+	def __validXwingRowCells(self, ulCoords, urCoords, llCoords, lrCoords):
+		# Ensures the rows are in different blockRows
+		# Ensures the columns are in the same blockColumns
+		# Ensures the columns are in the same columns
+		if ulCoords.blockRow != llCoords.blockRow and \
+			ulCoords.blockCol == llCoords.blockCol and urCoords.blockCol == lrCoords.blockCol and \
+			ulCoords.col == llCoords.col and urCoords.col == lrCoords.col:
+			return True
+		else:
+			return False
 
-						# Ensures the columns are in different blockColumns
-						# Ensures the rows are in the same blockRows
-						# Ensures the rows are in the same rows
-						if blockCol1_1 != blockCol2_1 and \
-							blockRow1_1 == blockRow2_1 and blockRow1_2 == blockRow2_2 and \
-							row1_1 == row2_1 and row1_2 == row2_2:
-							self.__removeXwingRow(num, blockRow1_1, row1_1, blockCol1_1, col1_1, blockCol2_1, col2_1)
-							self.__removeXwingRow(num, blockRow1_2, row1_2, blockCol1_1, col1_1, blockCol2_1, col2_1)
-
-	def __possibleRowXwings(self):
-		potentialXwings = self.__potentialXwings(self.__rowCellCoordsIter)
-		return potentialXwings
-
-	def __possibleColXwings(self):
-		potentialXwings = self.__potentialXwings(self.__colCellCoordsIter)
-		return potentialXwings
+	def __validXwingColCells(self, ulCoords, llCoords, urCoords, lrCoords):
+		# Ensures the columns are in different blockColumns
+		# Ensures the rows are in the same blockRows
+		# Ensures the rows are in the same rows
+		if ulCoords.blockCol != urCoords.blockCol and \
+			ulCoords.blockRow == urCoords.blockRow and llCoords.blockRow == lrCoords.blockRow and \
+			ulCoords.row == urCoords.row and llCoords.row == lrCoords.row:
+			return True
+		else:
+			return False
 
 	def __potentialXwings(self, coordIter):
 		potentialXwings = numDictList(3)
@@ -627,23 +622,10 @@ class Sudoku(object):
 
 		return potentialXwings
 
-	def __removeXwingRow(self, num, blockRow, row, blockCol1Skip, col1Skip, blockCol2Skip, col2Skip):
-		for blockCol, col in doubleIter(3):
-			if self.__skip(blockCol, col, blockCol1Skip, col1Skip) or self.__skip(blockCol, col, blockCol2Skip, col2Skip):
-				continue
-			self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
-
-	def __removeXwingCol(self, num, blockCol, col, blockRow1Skip, row1Skip, blockRow2Skip, row2Skip):
-		for blockRow, row in doubleIter(3):
-			if self.__skip(blockRow, row, blockRow1Skip, row1Skip) or self.__skip(blockRow, row, blockRow2Skip, row2Skip):
-				continue
-			self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
-
-	def __skip(self, blockRow, row, blockRowSkip, rowSkip):
-		if blockRow == blockRowSkip and row == rowSkip:
-			return True
-		else:
-			return False
+	def __removeXwingNotes(self, coordIter, num, blockCol, col, skipCoords1, skipCoords2):
+		for coords in coordIter(blockCol, col):
+			if not(coords == skipCoords1 or coords == skipCoords2):
+				self.__clearCellNoteNumberAndSet(num, coords.blockRow, coords.blockCol, coords.row, coords.col)
 	#
 	# __reduceXwing methods
 	###### END
@@ -653,10 +635,10 @@ class Sudoku(object):
 	#
 	def __reduceNakedSets(self):
 		# Reduce naked sets by row
-		self.__findNakedSets(self.__rowCellCoordsIter)
+		self.__findNakedSets(self.__rowCoordsIter)
 
 		# Reduce naked sets by column
-		self.__findNakedSets(self.__colCellCoordsIter)
+		self.__findNakedSets(self.__columnCoordsIter)
 
 		# Reduce naked sets by block
 		self.__findNakedSets(self.__blockCellCoordsIter)
@@ -928,12 +910,17 @@ class Sudoku(object):
 	# The iterator would yield the following 3 lists, where the contents of each
 	# list are coordinate objects for each cell.
 	# [1, 2, 3], [4, 5, 6], [7, 8, 9]
-	def __rowCellCoordsIter(self):
+	def __rowCoordsIter(self):
 		for blockRow, row in doubleIter(3):
 			rowCoords = []
-			for blockCol, col in doubleIter(3):
-				rowCoords.append(SudokuCoordinates(blockRow, blockCol, row, col))
+			for coords in self.__rowCellCoordsIter(blockRow, row):
+				rowCoords.append(coords)
 			yield rowCoords
+
+	# Iterator that yields coordinate objects found in the row specified with blockRow, row
+	def __rowCellCoordsIter(self, blockRow, row):
+		for blockCol, col in doubleIter(3):
+			yield SudokuCoordinates(blockRow, blockCol, row, col)
 
 	# Iterator that yields lists, which contain the coordinates for every cell
 	# that corresponds to a column in the sudoku grid.
@@ -946,12 +933,17 @@ class Sudoku(object):
 	# The iterator would yield the following 3 lists, where the contents of each
 	# list are coordinate objects for each cell.
 	# [1, 4, 7], [2, 5, 8], [3, 6, 9]
-	def __colCellCoordsIter(self):
+	def __columnCoordsIter(self):
 		for blockCol, col in doubleIter(3):
 			colCoords = []
-			for blockRow, row in doubleIter(3):
-				colCoords.append(SudokuCoordinates(blockRow, blockCol, row, col))
+			for coords in self.__colCellCoordsIter(blockCol, col):
+				colCoords.append(coords)
 			yield colCoords
+
+	# Iterator that yields coordinate objects found in the column specified with blockCol, col
+	def __colCellCoordsIter(self, blockCol, col):
+		for blockRow, row in doubleIter(3):
+			yield SudokuCoordinates(blockRow, blockCol, row, col)
 
 	# Iterator that yields lists, which contain the coordinates for every cell
 	# that corresponds to a block in the sudoku grid.
