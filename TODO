@@ -1,6 +1,7 @@
+- Simplify __checkValid() and __clearInitialValueNotes()
+- Clean up __reduceNakedSets()
 - Modify unittesting for test_Sudoku.py to test on puzzles that each require specific techniques
-	- Use puzzleEvil for xwing method
-- Clean up xwing methods + notes
+	- Find reduceXwing puzzle to test XwingRow method
 - Add xy wing technique
 - Add unique rectangle technique
 - Add forcing chain technique
