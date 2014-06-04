@@ -1,4 +1,9 @@
+- Modify unittesting for test_Sudoku.py to test on puzzles that each require specific techniques
+	- Use puzzleEvil for xwing method
+- Clean up xwing methods + notes
+- Add xy wing technique
 - Add unique rectangle technique
 - Add forcing chain technique
 - Find a technique to solve the puzzleExtreme.txt puzzle
+- Check invalid starting values (XwingCol2 bottom 3 rows shifted 1 right)
 - Generalize to any size grid.  Currently hardcoded to 3
