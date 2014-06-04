@@ -28,3 +28,11 @@ def numDictList(size):
 def cellIdIter(size):
 	for x in map(str, range(1, (size**2)+1)):
 		yield x
+
+# Generates all pairwise combinations for the input data
+# Ex: data = 'wxyz' => (w,x) (w,y) (w,z) (x,y) (x,z) (y,z)
+def pairwiseIter(data):
+	dataLen = len(data)
+	for i in range(dataLen-1):
+		for j in range(i+1, dataLen):
+			yield data[i], data[j]
