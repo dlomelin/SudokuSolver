@@ -1,5 +1,5 @@
-- Simplify __checkValid() and __clearInitialValueNotes()
-- Clean up __reduceNakedSets()
+- Comment the refactored __reduceNakedSets()
+- Add more testing to the unittest test_Sudoku.py
 - Modify unittesting for test_Sudoku.py to test on puzzles that each require specific techniques
 	- Find reduceXwing puzzle to test XwingRow method
 - Add xy wing technique
