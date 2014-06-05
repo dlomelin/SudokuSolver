@@ -1,4 +1,5 @@
 import os, sys
+from itertools import combinations
 
 from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList, pairwiseIter
 from SudokuSolver.modules.SudokuBlock import SudokuBlock
@@ -194,9 +195,11 @@ class Sudoku(object):
 	def __deleteCellNoteNumber(self, num, blockRow, blockCol, row, col):
 		self.__matrix[blockRow][blockCol].deleteNoteNumber(num, row, col)
 
+	# Sets the value of the specified cell
 	def __setCellValue(self, num, blockRow, blockCol, row, col):
 		self.__matrix[blockRow][blockCol].setValue(num, row, col)
 
+	# Clears out available notes from the specified cell
 	def __clearCellNoteNumbers(self, blockRow, blockCol, row, col):
 		self.__matrix[blockRow][blockCol].clearNoteNumbers(row, col)
 
@@ -221,20 +224,11 @@ class Sudoku(object):
 		# Clears out available notes from the specified cell
 		self.__clearCellNoteNumbers(blockRow, blockCol, row, col)
 
-		# Clear the current number from the notes in every cell of the specified block
-		self.__clearBlockNoteNumber(num, blockRow, blockCol)
-
-		# Clear the current number from the notes in every row and column that contain the
-		# specified cell
-		self.__clearRowColNoteNumber(blockRow, blockCol, row, col)
+		# Clears out available notes from the affected block, row, and column
+		self.__removeAffectedNotes(num, blockRow, blockCol, row, col)
 
 		# Let the solver know changes were made
 		self.__setChangeTrue()
-
-	# Clear the current number from the notes in every cell of the specified block
-	def __clearBlockNoteNumber(self, num, blockRow, blockCol):
-		for coords in self.__blockCellCoordsIter(blockRow, blockCol):
-			self.__clearCellNoteNumberAndSet(num, coords.blockRow, coords.blockCol, coords.row, coords.col)
 
 	# Deletes the specified number from the cell's notes.  If there is only
 	# one number left in the notes, then it sets the value
@@ -272,13 +266,43 @@ class Sudoku(object):
 
 		return unassignedNums
 
+	# Clears out available notes from the affected block, row, and column
+	def __removeAffectedNotes(self, num, blockRow, blockCol, row, col):
+
+		# Remove the number from the notes along the block
+		self.__removeNotesByIter(
+			num,
+			self.__blockCellCoordsIter,
+			blockRow,
+			blockCol,
+			[],
+		)
+
+		# Remove the number from the notes along the row
+		self.__removeNotesByIter(
+			num,
+			self.__rowCellCoordsIter,
+			blockRow,
+			row,
+			[],
+		)
+
+		# Remove the number from the notes along the column
+		self.__removeNotesByIter(
+			num,
+			self.__colCellCoordsIter,
+			blockCol,
+			col,
+			[],
+		)
+
 	# Goes through each cell passed from the iterator and removes the number from the cell's notes
 	def __removeNotesByIter(self, num, coordIter, coordPos1, coordPos2, skipCoordsList):
 
 		# Iterate through each cell
 		for coords in coordIter(coordPos1, coordPos2):
 
-			# Skip the cells that are the original xwing cells
+			# Skip the cells that are the skip list
 			if not(self.__coordsInList(coords, skipCoordsList)):
 				# Remove the numbers from the cell notes
 				self.__clearCellNoteNumberAndSet(num, coords.blockRow, coords.blockCol, coords.row, coords.col)
@@ -381,32 +405,35 @@ class Sudoku(object):
 		for blockRow, blockCol in doubleIter(3):
 			self.__matrix[blockRow][blockCol] = SudokuBlock(tempMatrix[blockRow][blockCol])
 
-		self.__clearInitialValueNotes()
+		# Adjusts the notes based on the initial values of the sudoku grid.
+		self.__clearInitialNotes()
 
-	def __clearInitialValueNotes(self):
-		# Iterate through each of the 9 blocks
-		for blockRow, blockCol in doubleIter(3):
+	# Adjusts the notes based on the initial values of the sudoku grid.
+	def __clearInitialNotes(self):
 
-			# Reduce numbers within the SudokuBlock based on initial values
-			for num in self.__validBlockNums(blockRow, blockCol):
-				self.__clearBlockNoteNumber(num, blockRow, blockCol)
+		# Iterate through each block in the sudoku grid
+		for cellCoordinatesList in self.__blockCoordsIter():
 
-			# Reduce numbers across all rows/columns based on initial SudokuBlock values
-			self.__reduceBlockNotes(blockRow, blockCol)
+			# Iterate through each cell
+			for cellCoords in cellCoordinatesList:
 
-	def __validBlockNums(self, blockRow, blockCol):
-		validNums = set()
-		# Iterate through each of the 9 cells in blockRow, blockCol
-		for coords in self.__blockCellCoordsIter(blockRow, blockCol):
-			num = self.getCellValue(coords.blockRow, coords.blockCol, coords.row, coords.col)
-			if num:
-				validNums.add(num)
-		return validNums
+				# If the cell has a number assigned, then clear the block, row, and column notes
+				num = self.getCellValue(
+					cellCoords.blockRow,
+					cellCoords.blockCol,
+					cellCoords.row,
+					cellCoords.col,
+				)
+				if num:
+					# Clears out available notes from the affected block, row, and column
+					self.__removeAffectedNotes(
+						num,
+						cellCoords.blockRow,
+						cellCoords.blockCol,
+						cellCoords.row,
+						cellCoords.col,
+					)
 
-	def __reduceBlockNotes(self, blockRow, blockCol):
-		# Iterate through each of the 9 cells in blockRow, blockCol
-		for coords in self.__blockCellCoordsIter(blockRow, blockCol):
-			self.__clearRowColNoteNumber(coords.blockRow, coords.blockCol, coords.row, coords.col)
 	#
 	# __init__ methods
 	###### END
@@ -524,7 +551,7 @@ class Sudoku(object):
 
 					# Candidate line lies along a column, therefore remove note from the rest of the column
 					elif coords1.col == coords2.col:
-						# Remove the number from the notes along the row
+						# Remove the number from the notes along the column
 						self.__removeNotesByIter(
 							num,
 							self.__colCellCoordsIter,
@@ -713,50 +740,47 @@ class Sudoku(object):
 
 	def __findNakedSets(self, coordIter):
 
+		# Iterate through each row/column/block in the sudoku grid
 		for cellCoordinatesList in coordIter():
 			noteCoords = []
 			noteList = []
 			for cellCoords in cellCoordinatesList:
 
-				noteNums = self.getCellNotes(cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col)
+				noteNums = self.getCellNotes(
+					cellCoords.blockRow,
+					cellCoords.blockCol,
+					cellCoords.row,
+					cellCoords.col,
+				)
 				if noteNums:
 					noteCoords.append(cellCoords)
 					noteList.append(noteNums)
 
-			noteLen = len(noteList)
-			if noteLen >= 5:
-				self.__findNakedPairs(noteList, noteCoords, noteLen, cellCoordinatesList)
-				self.__findNakedTrios(noteList, noteCoords, noteLen, cellCoordinatesList)
-				self.__findNakedQuads(noteList, noteCoords, noteLen, cellCoordinatesList)
-			elif noteLen <= 4:
-				self.__findNakedPairs(noteList, noteCoords, noteLen, cellCoordinatesList)
-				self.__findNakedTrios(noteList, noteCoords, noteLen, cellCoordinatesList)
-			elif noteLen <= 3:
-				self.__findNakedPairs(noteList, noteCoords, noteLen, cellCoordinatesList)
+			for setSize in range(2, 5):
+				self.__findNakedSetCombinations(setSize, noteList, noteCoords, cellCoordinatesList)
 
-	def __findNakedPairs(self, noteList, noteCoords, noteLen, cellCoordinatesList):
-		for i in range(noteLen - 1):
-			for j in range(i + 1, noteLen):
-				uniqueNums = self.__combineNotes(noteList, [i, j])
-				if len(uniqueNums) == 2:
-					self.__removeNakedSetNotes(uniqueNums, cellCoordinatesList, noteCoords, [i, j])
+	def __findNakedSetCombinations(self, setSize, noteList, noteCoords, cellCoordinatesList):
 
-	def __findNakedTrios(self, noteList, noteCoords, noteLen, cellCoordinatesList):
-		for i in range(noteLen - 2):
-			for j in range(i + 1, noteLen - 1):
-				for k in range(j + 1, noteLen):
-					uniqueNums = self.__combineNotes(noteList, [i, j, k])
-					if len(uniqueNums) == 3:
-						self.__removeNakedSetNotes(uniqueNums, cellCoordinatesList, noteCoords, [i, j, k])
+		for indexList in combinations(range(len(noteList)), setSize):
+			uniqueNums = self.__combineNotes(noteList, indexList)
+			if len(uniqueNums) == setSize:
 
-	def __findNakedQuads(self, noteList, noteCoords, noteLen, cellCoordinatesList):
-		for i in range(noteLen - 3):
-			for j in range(i + 1, noteLen - 2):
-				for k in range(j + 1, noteLen - 1):
-					for l in range(k + 1, noteLen):
-						uniqueNums = self.__combineNotes(noteList, [i, j, k, l])
-						if len(uniqueNums) == 4:
-							self.__removeNakedSetNotes(uniqueNums, cellCoordinatesList, noteCoords, [i, j, k, l])
+				skipCoordsList = []
+				for i in indexList:
+					skipCoordsList.append(noteCoords[i])
+
+				for num in uniqueNums:
+					for coords in cellCoordinatesList:
+						# Skip the cells that are in the skip list
+						if not(self.__coordsInList(coords, skipCoordsList)):
+							# Remove the numbers from the cell notes
+							self.__clearCellNoteNumberAndSet(
+								num,
+								coords.blockRow,
+								coords.blockCol,
+								coords.row,
+								coords.col,
+							)
 
 	def __combineNotes(self, setList, coords):
 		uniqueNums = set()
@@ -764,24 +788,6 @@ class Sudoku(object):
 			for num in list(setList[indexNum]):
 				uniqueNums.add(num)
 		return uniqueNums
-
-	def __removeNakedSetNotes(self, removeNums, cellCoordinatesList, skipCoords, skipCoordsIndex):
-		for cellCoords in cellCoordinatesList:
-
-			if not self.__skipCoords(skipCoords, skipCoordsIndex, cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col):
-				for num in removeNums:
-					self.__clearCellNoteNumberAndSet(num, cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col)
-
-	def __skipCoords(self, skipCoords, skipIndex, blockRow, blockCol, row, col):
-		skip = False
-		for i in skipIndex:
-			testBlockRow = skipCoords[i].blockRow
-			testBlockCol = skipCoords[i].blockCol
-			testRow = skipCoords[i].row
-			testCol = skipCoords[i].col
-			if testBlockRow == blockRow and testBlockCol == blockCol and testRow == row and testCol == col:
-				skip = True
-		return skip
 	#
 	# __reduceNakedSets methods
 	###### END
@@ -805,7 +811,7 @@ class Sudoku(object):
 			# Look for rows/columns that share the unassigned number in pairs of rows
 			for num in unassignedNums:
 
-				# Identify the rows in the current block that can have the number eliminted from the notes
+				# Identify the rows in the current block that can have the number eliminated from the notes
 				sharedRows = self.__findSharedLinesByRow(num, blockRow, blockCol)
 				if sharedRows:
 
@@ -814,7 +820,7 @@ class Sudoku(object):
 						for col in range(3):
 							self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
 
-				# Identify the columns in the current block that can have the number eliminted from the notes
+				# Identify the columns in the current block that can have the number eliminated from the notes
 				sharedCols = self.__findSharedLinesByCol(num, blockRow, blockCol)
 				if sharedCols:
 
@@ -823,7 +829,7 @@ class Sudoku(object):
 						for row in range(3):
 							self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
 
-	# Identify the rows in the current block that can have the number eliminted from the notes
+	# Identify the rows in the current block that can have the number eliminated from the notes
 	def __findSharedLinesByRow(self, num, blockRow, blockCol):
 		sharedRows = set()
 		affectedBlocks = set()
@@ -847,7 +853,7 @@ class Sudoku(object):
 		else:
 			return set()
 
-	# Identify the columns in the current block that can have the number eliminted from the notes
+	# Identify the columns in the current block that can have the number eliminated from the notes
 	def __findSharedLinesByCol(self, num, blockRow, blockCol):
 		sharedCols = set()
 		affectedBlocks = set()
@@ -875,85 +881,42 @@ class Sudoku(object):
 	###### END
 
 	###### START
-	# __clearRowColNoteNumber methods
-	#
-	# If the cell has an assigned value, then delete the cell's value from the notes
-	# across all rows/columns
-	def __clearRowColNoteNumber(self, blockRow, blockCol, row, col):
-		num = self.getCellValue(blockRow, blockCol, row, col)
-		if num:
-			# If num is defined, then remove all note values in the columns/rows
-			self.__clearCellNoteNumberFromRow(num, blockRow, blockCol, row)
-			self.__clearCellNoteNumberFromColumn(num, blockRow, blockCol, col)
-
-	# Delete the specified number from all cell notes in the column
-	def __clearCellNoteNumberFromColumn(self, num, blockRow, blockCol, col):
-		for blockRowLoop in range(3):
-			if blockRowLoop == blockRow:
-				continue
-			for row in range(3):
-				self.__clearCellNoteNumberAndSet(num, blockRowLoop, blockCol, row, col)
-
-	# Delete the specified number from all cell notes in the row
-	def __clearCellNoteNumberFromRow(self, num, blockRow, blockCol, row):
-		for blockColLoop in range(3):
-			if blockColLoop == blockCol:
-				continue
-			for col in range(3):
-				self.__clearCellNoteNumberAndSet(num, blockRow, blockColLoop, row, col)
-	#
-	# __clearRowColNoteNumber methods
-	###### END
-
-	###### START
 	# __checkValid methods
 	#
 	def __checkValid(self):
-		self.__checkValidBlocks()
-		self.__checkValidRows()
-		self.__checkValidCols()
+		# Check valid cells by row
+		self.__checkValidCells(self.__rowCoordsIter, 'Rows')
+
+		# Check valid cells by column
+		self.__checkValidCells(self.__columnCoordsIter, 'Columns')
+
+		# Check valid cells by block
+		self.__checkValidCells(self.__blockCoordsIter, 'Blocks')
+
+		# The previous method calls will raise Exceptions if the completed grid is invalid
+		# so if it gets here, then the puzzle is valid and solved
 		self.__setSolvedTrue()
 
-	def __checkValidBlocks(self):
-		# Iterate through each of the 9 blocks to make sure each one has 9 unique numbers
-		for blockRow, blockCol in doubleIter(3):
-			if not self.__validBlock(blockRow, blockCol):
+	# Makes sure there are 9 unique elements in the iterator
+	def __checkValidCells(self, coordIter, iterType):
+
+		# Iterate through each row/column/block in the sudoku grid
+		for cellCoordinatesList in coordIter():
+			validNums = set()
+
+			# Iterate through each cell and store the cell's value
+			for cellCoords in cellCoordinatesList:
+				num = self.getCellValue(
+					cellCoords.blockRow,
+					cellCoords.blockCol,
+					cellCoords.row,
+					cellCoords.col,
+				)
+				validNums.add(num)
+
+			if len(validNums) != 9:
 				print self
-				raise Exception('Completed puzzle is not a valid solution.  Block (%s,%s) contains duplicate entries.  Check the starting puzzle or code to remove bugs.' % (blockRow, blockCol))
-
-	def __checkValidRows(self):
-		# Checks that rows have 9 unique numbers
-		for blockRow, row in doubleIter(3):
-			if not self.__validRow(blockRow, row):
-				print self
-				raise Exception('Completed puzzle is not a valid solution.  Row (%s,%s) contains duplicate entries.  Check the starting puzzle or code to remove bugs.' % (blockRow, row))
-
-	def __checkValidCols(self):
-		# Checks that columns have 9 unique numbers
-		for blockCol, col in doubleIter(3):
-			if not self.__validCol(blockCol, col):
-				print self
-				raise Exception('Completed puzzle is not a valid solution.  Column (%s,%s) contains duplicate entries.  Check the starting puzzle or code to remove bugs.' % (blockCol, col))
-
-	def __validRow(self, blockRow, row):
-		validSolution = True
-		validNums = set()
-		for coords in self.__rowCellCoordsIter(blockRow, row):
-			num = self.getCellValue(coords.blockRow, coords.blockCol, coords.row, coords.col)
-			validNums.add(num)
-		if len(validNums) != 9:
-			validSolution = False
-		return validSolution
-
-	def __validCol(self, blockCol, col):
-		validSolution = True
-		validNums = set()
-		for coords in self.__colCellCoordsIter(blockCol, col):
-			num = self.getCellValue(coords.blockRow, coords.blockCol, coords.row, coords.col)
-			validNums.add(num)
-		if len(validNums) != 9:
-			validSolution = False
-		return validSolution
+				raise Exception('Completed puzzle is not a valid solution.  %s contain duplicate entries.  Check the starting puzzle or code to remove bugs.' % (iterType))
 
 	def __setSolvedTrue(self):
 		self.__solvedStatus = True
