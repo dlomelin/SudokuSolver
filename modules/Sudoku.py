@@ -97,6 +97,9 @@ class Sudoku(object):
 			# Reduce numbers based on naked pairs/trios
 			self.__reduceNakedSets()
 
+			# Reduce numbers based on using the XYwing method
+			self.__reduceXYwing()
+
 			# Reduce numbers based on multiple lines
 			self.__reduceMultipleLines()
 
@@ -815,6 +818,153 @@ class Sudoku(object):
 		return uniqueNums
 	#
 	# __reduceNakedSets methods
+	###### END
+
+	###### START
+	# __reduceXYwing methods
+	#
+	def __reduceXYwing(self):
+		# Reduce XY wing sets by row
+		self.__findXYwingSets(self.__rowCoordsIter)
+
+		# Reduce XY wing sets by column
+		self.__findXYwingSets(self.__columnCoordsIter)
+
+	def __findXYwingSets(self, coordIter):
+
+		# Iterate through each row/column in the sudoku grid
+		for cellCoordinatesList in coordIter():
+
+			# Iterate through each cell's coordinates and create all pairwise combinations
+			# Keep only the pairs of coordinates in different blocks and each contain
+			# exactly 2 notes.
+			for cellCoordsList in filter(self.__validXYwingPair, combinations(cellCoordinatesList, 2)):
+
+				# These 2 cells make up a valid potential XY wing pair
+				cell1 = cellCoordsList[0]
+				cell2 = cellCoordsList[1]
+
+				# Get the notes for each cell
+				cell1Notes = self.getCellNotes(cell1.blockRow, cell1.blockCol, cell1.row, cell1.col)
+				cell2Notes = self.getCellNotes(cell2.blockRow, cell2.blockCol, cell2.row, cell2.col)
+
+				# Create a new set that contains the numbers different between both cells
+				# Only cell pairs that have 1 element in common are valid xy wing pairs
+				# eg, set([1,2]) + set([2,3]) = valid pair since symmetric difference = set([1,3])
+				newNotes = cell1Notes.symmetric_difference(cell2Notes)
+				if len(newNotes) == 2:
+
+					# Check each block that is a parent to each cell for any cells that have notes
+					# equal to newNotes
+					self.__findBentCell(newNotes, cell1, cell2)
+					self.__findBentCell(newNotes, cell2, cell1)
+
+	def __findBentCell(self, searchNotes, cell1, cell2):
+		if cell1.alignsByRow(cell2):
+			alignType = 'row'
+		elif cell1.alignsByCol(cell2):
+			alignType = 'col'
+
+		# Iterate through each cell in cell1's block
+		for coords in self.__blockCellCoordsIter(cell1.blockRow, cell1.blockCol):
+
+			# Start looking for a valid bent cell that has the same cell notes as searchNotes
+			noteNums = self.getCellNotes(
+				coords.blockRow,
+				coords.blockCol,
+				coords.row,
+				coords.col,
+			)
+			if noteNums == searchNotes:
+				validXYWing = False
+
+				# If cell1 and cell2 are aligned by row or column, make
+				# sure the new cell does not also align by row or column respectively
+				if alignType == 'row' and not cell1.alignsByRow(coords):
+					validXYWing = True
+				elif alignType == 'col' and not cell1.alignsByCol(coords):
+					validXYWing = True
+
+				# All criteria is perfect to do xy wing technique.
+				if validXYWing:
+					# Find the number to remove and the cell to remove the number from
+					removeNum, removeCoords = self.__intersectXYWingCells(
+						coords,
+						cell2,
+						alignType,
+					)
+
+					self.__clearCellNoteNumberAndSet(
+						removeNum,
+						removeCoords.blockRow,
+						removeCoords.blockCol,
+						removeCoords.row,
+						removeCoords.col,
+					)
+
+	def __intersectXYWingCells(self, bentCell, cell2, alignType):
+		# Get the number shared between both sets of notes
+		# This number will be removed from the intersection between the 2 cells
+		sharedNotes = self.__notesInCommon(bentCell, cell2)
+		removeNum = sharedNotes.pop()
+
+		if alignType == 'row':
+			removeCoords = SudokuCoordinates(
+				bentCell.blockRow,
+				cell2.blockCol,
+				bentCell.row,
+				cell2.col,
+			)
+		elif alignType == 'col':
+			removeCoords = SudokuCoordinates(
+				cell2.blockRow,
+				bentCell.blockCol,
+				cell2.row,
+				bentCell.col,
+			)
+
+		return removeNum, removeCoords
+
+	def __notesInCommon(self, coords1, coords2):
+		noteNums1 = self.getCellNotes(
+			coords1.blockRow,
+			coords1.blockCol,
+			coords1.row,
+			coords1.col,
+		)
+
+		noteNums2 = self.getCellNotes(
+			coords2.blockRow,
+			coords2.blockCol,
+			coords2.row,
+			coords2.col,
+		)
+
+		return noteNums1.intersection(noteNums2)
+
+	def __validXYwingPair(self, x):
+		if x[0].alignsByBlock(x[1]):
+			return False
+		else:
+			# Store the cell pair's notes
+			noteNums1 = self.getCellNotes(
+				x[0].blockRow,
+				x[0].blockCol,
+				x[0].row,
+				x[0].col,
+			)
+			noteNums2 = self.getCellNotes(
+				x[1].blockRow,
+				x[1].blockCol,
+				x[1].row,
+				x[1].col,
+			)
+			if len(noteNums1) == 2 and len(noteNums2) == 2:
+				return True
+			else:
+				return False
+	#
+	# __reduceXYwing methods
 	###### END
 
 	###### START
