@@ -251,7 +251,7 @@ class Sudoku(object):
 		# Create a list of all possible numbers that can be assigned to the current set of cells
 		unassignedNums = numberSet(3)
 
-		# Iterate through each cell and extract the coordinates
+		# Iterate through each cell's coordinates
 		for cellCoords in cellCoordinatesList:
 
 			# Remove the already assigned number in the current cell from the list of possible numbers
@@ -414,7 +414,7 @@ class Sudoku(object):
 		# Iterate through each block in the sudoku grid
 		for cellCoordinatesList in self.__blockCoordsIter():
 
-			# Iterate through each cell
+			# Iterate through each cell's coordinates
 			for cellCoords in cellCoordinatesList:
 
 				# If the cell has a number assigned, then clear the block, row, and column notes
@@ -486,7 +486,7 @@ class Sudoku(object):
 				availableCellCount = 0
 				availableCellCoords = None
 
-				# Iterate through each of the cells
+				# Iterate through each cell's coordinates
 				for cellCoords in cellCoordinatesList:
 
 					# If that position was already assigned a number then skip it
@@ -564,7 +564,7 @@ class Sudoku(object):
 	def __generateHintCoords(self, cellCoordinatesList):
 		hintCoords = numDictList(3)
 
-		# Iterate through all cell coordinates
+		# Iterate through each cell's coordinates
 		for cellCoords in cellCoordinatesList:
 			# Store the coordinates where all numbers are found
 			noteNums = self.getCellNotes(
@@ -701,7 +701,7 @@ class Sudoku(object):
 		for cellCoordinatesList in coordIter():
 			hintCoords = numDictList(3)
 
-			# Iterate through each cell
+			# Iterate through each cell's coordinates
 			for cellCoords in cellCoordinatesList:
 
 				# Loop through all notes in the current cell
@@ -744,8 +744,11 @@ class Sudoku(object):
 		for cellCoordinatesList in coordIter():
 			noteCoords = []
 			noteList = []
+
+			# Iterate through each cell's coordinates
 			for cellCoords in cellCoordinatesList:
 
+				# Store the cell's coordinates and notes
 				noteNums = self.getCellNotes(
 					cellCoords.blockRow,
 					cellCoords.blockCol,
@@ -756,23 +759,44 @@ class Sudoku(object):
 					noteCoords.append(cellCoords)
 					noteList.append(noteNums)
 
+			# setSize determines the naked set size, 2 = naked pairs, 3 = naked trios, 4 = naked quads
 			for setSize in range(2, 5):
+
+				# Looks for naked sets in the current set of cells
 				self.__findNakedSetCombinations(setSize, noteList, noteCoords, cellCoordinatesList)
 
+	# Finds all valid naked sets.  If any are found, remove the numbers that are found in the naked
+	# sets from all remaining neighboring cells.
 	def __findNakedSetCombinations(self, setSize, noteList, noteCoords, cellCoordinatesList):
 
+		# Generates a list with all combinations of size setSize.
+		# If noteList = [0, 1, 2] and setSize = 2, then 3 indexLists would be created
+		# [0, 1], [0, 2], [1, 2]
 		for indexList in combinations(range(len(noteList)), setSize):
+
+			# Generate a set of the unique notes in noteList
 			uniqueNums = self.__combineNotes(noteList, indexList)
+
+			# Valid naked sets have been found when the number of unique numbers == the set size.
+			# If 2 unique numbers are found in 2 cells, then you can remove those 2 numbers from
+			# the remaining cells.  Same criteria applies if you find 3 unique numbers in 3 cells,
+			# 4 unique numbers in 4 cells.
 			if len(uniqueNums) == setSize:
 
+				# Store the coordinates of the cells that made up the naked sets.
 				skipCoordsList = []
 				for i in indexList:
 					skipCoordsList.append(noteCoords[i])
 
+				# Iterate through each number in the naked set
 				for num in uniqueNums:
+
+					# Iterate through each cell in the current row/column/block
 					for coords in cellCoordinatesList:
-						# Skip the cells that are in the skip list
+
+						# Skip the cells that are in the skip list (cells that made up the naked set)
 						if not(self.__coordsInList(coords, skipCoordsList)):
+
 							# Remove the numbers from the cell notes
 							self.__clearCellNoteNumberAndSet(
 								num,
@@ -782,6 +806,7 @@ class Sudoku(object):
 								coords.col,
 							)
 
+	# Generate a set of the unique notes in noteList
 	def __combineNotes(self, setList, coords):
 		uniqueNums = set()
 		for indexNum in coords:
@@ -904,7 +929,7 @@ class Sudoku(object):
 		for cellCoordinatesList in coordIter():
 			validNums = set()
 
-			# Iterate through each cell and store the cell's value
+			# Iterate through each cell's coordinates
 			for cellCoords in cellCoordinatesList:
 				num = self.getCellValue(
 					cellCoords.blockRow,
