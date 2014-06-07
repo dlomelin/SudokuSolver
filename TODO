@@ -1,6 +1,5 @@
 - Modify unittesting for test_Sudoku.py to test on puzzles that each require specific techniques
 	- Find reduceXwing puzzle to test XwingRow method
-- Add xy wing technique
 - Add unique rectangle technique
 - Add forcing chain technique
 - Find a technique to solve the puzzleExtreme.txt puzzle
