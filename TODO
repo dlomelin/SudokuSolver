@@ -1,5 +1,6 @@
 - Modify unittesting for test_Sudoku.py to test on puzzles that each require specific techniques
 	- Find reduceXwing puzzle to test XwingRow method
+- Add unit testing for SudokuCoordinates methods and remove any older block,row,col testing in existing Sudoku.py code
 - Add unique rectangle technique
 - Add forcing chain technique
 - Find a technique to solve the puzzleExtreme.txt puzzle
