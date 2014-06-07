@@ -5,6 +5,7 @@ class TestSudoku(unittest.TestCase):
 	def setUp(self):
 		pass
 
+	# Tests the xwing solver using a puzzle that requires xwing technique
 	def test_solveXwingColPuzzle(self):
 		startData = [
 			['1', ' ', '9', '7', ' ', ' ', '6', ' ', '2'],
@@ -32,6 +33,7 @@ class TestSudoku(unittest.TestCase):
 
 		self.__validateSolver(startData, solvedData)
 
+	# Tests the multiple lines solver using a puzzle that requires multiple lines technique
 	def test_solveMultipleLines(self):
 		startData = [
 			[' ', ' ', '9', ' ', '3', ' ', '6', ' ', ' '],
@@ -59,6 +61,7 @@ class TestSudoku(unittest.TestCase):
 
 		self.__validateSolver(startData, solvedData)
 
+	# Tests the naked sets solver using a puzzle that requires the naked sets technique
 	def test_solveReduceNakedSets(self):
 		startData = [
 			['4', ' ', ' ', '3', ' ', '8', ' ', ' ', '7'],
@@ -105,6 +108,119 @@ class TestSudoku(unittest.TestCase):
 
 		self.__validateSolver(startData, solvedData)
 	"""
+
+	# Test that the __eq__ method returns True for the same data sets
+	def test_eq(self):
+		data1 = [
+			['4', '5', '2', '3', '1', '8', '9', '6', '7'],
+			['3', '1', '6', '2', '7', '9', '5', '4', '8'],
+			['9', '8', '7', '6', '5', '4', '3', '2', '1'],
+			['2', '3', '1', '5', '8', '7', '4', '9', '6'],
+			['6', '4', '8', '1', '9', '3', '2', '7', '5'],
+			['5', '7', '9', '4', '6', '2', '8', '1', '3'],
+			['7', '6', '4', '9', '3', '5', '1', '8', '2'],
+			['8', '2', '5', '7', '4', '1', '6', '3', '9'],
+			['1', '9', '3', '8', '2', '6', '7', '5', '4'],
+		]
+		sudokuObj1 = Sudoku(data=data1)
+		sudokuObj2 = Sudoku(data=data1)
+
+		self.assertEqual(sudokuObj1, sudokuObj2)
+
+	# Test that the __eq__ method does not return True for different data sets
+	def test_notEq(self):
+		data1 = [
+			['4', '5', '2', '3', '1', '8', '9', '6', '7'],
+			['3', '1', '6', '2', '7', '9', '5', '4', '8'],
+			['9', '8', '7', '6', '5', '4', '3', '2', '1'],
+			['2', '3', '1', '5', '8', '7', '4', '9', '6'],
+			['6', '4', '8', '1', '9', '3', '2', '7', '5'],
+			['5', '7', '9', '4', '6', '2', '8', '1', '3'],
+			['7', '6', '4', '9', '3', '5', '1', '8', '2'],
+			['8', '2', '5', '7', '4', '1', '6', '3', '9'],
+			['1', '9', '3', '8', '2', '6', '7', '5', '4'],
+		]
+		sudokuObj1 = Sudoku(data=data1)
+
+		data2 = [
+			['8', '4', '9', '5', '3', '2', '6', '1', '7'],
+			['5', '3', '6', '7', '1', '4', '2', '8', '9'],
+			['1', '2', '7', '8', '6', '9', '4', '3', '5'],
+			['3', '9', '5', '4', '7', '1', '8', '2', '6'],
+			['7', '1', '4', '2', '8', '6', '5', '9', '3'],
+			['2', '6', '8', '3', '9', '5', '1', '7', '4'],
+			['6', '8', '1', '9', '5', '3', '7', '4', '2'],
+			['9', '7', '2', '6', '4', '8', '3', '5', '1'],
+			['4', '5', '3', '1', '2', '7', '9', '6', '8'],
+		]
+		sudokuObj2 = Sudoku(data=data2)
+
+		self.assertNotEqual(sudokuObj1, sudokuObj2)
+
+	# test the output value of the gridValues method
+	def test_gridValues(self):
+		startData = [
+			['4', ' ', ' ', '3', ' ', '8', ' ', ' ', '7'],
+			[' ', '1', ' ', ' ', '7', '9', ' ', '4', ' '],
+			[' ', ' ', ' ', '6', ' ', '4', ' ', ' ', ' '],
+			[' ', '3', ' ', ' ', ' ', '7', ' ', '9', ' '],
+			['6', '4', '8', '1', '9', '3', '2', '7', '5'],
+			[' ', '7', ' ', ' ', ' ', '2', ' ', '1', ' '],
+			[' ', ' ', ' ', '9', ' ', '5', ' ', ' ', ' '],
+			[' ', '2', ' ', '7', '4', '1', ' ', '3', ' '],
+			['1', ' ', ' ', '8', ' ', '6', ' ', ' ', '4'],
+		]
+		sudokuObj = Sudoku(data=startData)
+		gridDataTest = sudokuObj.gridValues()
+
+		gridData = [
+			['4', '.', '.', '3', '.', '8', '.', '.', '7'],
+			['.', '1', '.', '.', '7', '9', '.', '4', '.'],
+			['.', '.', '.', '6', '.', '4', '.', '.', '.'],
+			['.', '3', '.', '.', '.', '7', '.', '9', '.'],
+			['6', '4', '8', '1', '9', '3', '2', '7', '5'],
+			['.', '7', '.', '.', '.', '2', '.', '1', '.'],
+			['.', '.', '.', '9', '.', '5', '.', '.', '.'],
+			['.', '2', '.', '7', '4', '1', '.', '3', '.'],
+			['1', '.', '.', '8', '.', '6', '.', '.', '4'],
+		]
+
+		self.assertEqual(gridData, gridDataTest)
+
+	# Test that the complete method returns True for a complete data set
+	def test_complete(self):
+		data1 = [
+			['4', '5', '2', '3', '1', '8', '9', '6', '7'],
+			['3', '1', '6', '2', '7', '9', '5', '4', '8'],
+			['9', '8', '7', '6', '5', '4', '3', '2', '1'],
+			['2', '3', '1', '5', '8', '7', '4', '9', '6'],
+			['6', '4', '8', '1', '9', '3', '2', '7', '5'],
+			['5', '7', '9', '4', '6', '2', '8', '1', '3'],
+			['7', '6', '4', '9', '3', '5', '1', '8', '2'],
+			['8', '2', '5', '7', '4', '1', '6', '3', '9'],
+			['1', '9', '3', '8', '2', '6', '7', '5', '4'],
+		]
+		sudokuObj1 = Sudoku(data=data1)
+
+		self.assertTrue(sudokuObj1.complete())
+
+	def test_getCellValue(self):
+		data1 = [
+			['4', '5', '2', '3', '1', '8', '9', '6', '7'],
+			['3', '1', '6', '2', '7', '9', '5', '4', '8'],
+			['9', '8', '7', '6', '5', '4', '3', '2', '1'],
+			['2', '3', '1', '5', '8', '7', '4', '9', '6'],
+			['6', '4', '8', '1', '9', '3', '2', '7', '5'],
+			['5', '7', '9', '4', '6', '2', '8', '1', '3'],
+			['7', '6', '4', '9', '3', '5', '1', '8', '2'],
+			['8', '2', '5', '7', '4', '1', '6', '3', '9'],
+			['1', '9', '3', '8', '2', '6', '7', '5', '4'],
+		]
+		sudokuObj1 = Sudoku(data=data1)
+
+		self.assertTrue(sudokuObj1.getCellValue(0, 0, 2, 1), 8)
+		self.assertTrue(sudokuObj1.getCellValue(2, 0, 0, 2), 4)
+		self.assertTrue(sudokuObj1.getCellValue(1, 1, 0, 1), 5)
 
 	###################
 	# Private Methods #
