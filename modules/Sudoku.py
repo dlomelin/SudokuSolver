@@ -542,7 +542,7 @@ class Sudoku(object):
 					coords2 = hintCoords[num][1]
 
 					# Candidate line lies along a row, therefore remove note from the rest of the row
-					if coords1.row == coords2.row:
+					if coords1.alignsByRow(coords2):
 						# Remove the number from the notes along the row
 						self.__removeNotesByIter(
 							num,
@@ -553,7 +553,7 @@ class Sudoku(object):
 						)
 
 					# Candidate line lies along a column, therefore remove note from the rest of the column
-					elif coords1.col == coords2.col:
+					elif coords1.alignsByCol(coords2):
 						# Remove the number from the notes along the column
 						self.__removeNotesByIter(
 							num,
@@ -674,11 +674,10 @@ class Sudoku(object):
 	# required for the xwing method to work
 	def __validXwingRowCells(self, ulCoords, urCoords, llCoords, lrCoords):
 		# Ensures the rows are in different blockRows
-		# Ensures the columns are in the same blockColumns
-		# Ensures the columns are in the same columns
+		# Ensures the upperleft and lowerleft coords are in the same grid column
+		# Ensures the upperright and lowerright coords are in the same grid column
 		if ulCoords.blockRow != llCoords.blockRow and \
-			ulCoords.blockCol == llCoords.blockCol and urCoords.blockCol == lrCoords.blockCol and \
-			ulCoords.col == llCoords.col and urCoords.col == lrCoords.col:
+			ulCoords.alignsByCol(llCoords) and urCoords.alignsByCol(lrCoords):
 			return True
 		else:
 			return False
@@ -687,11 +686,10 @@ class Sudoku(object):
 	# required for the xwing method to work
 	def __validXwingColCells(self, ulCoords, llCoords, urCoords, lrCoords):
 		# Ensures the columns are in different blockColumns
-		# Ensures the rows are in the same blockRows
-		# Ensures the rows are in the same rows
+		# Ensures the upperleft and upperright coords are in the same grid row
+		# Ensures the lowerleft and lowerright coords are in the same grid row
 		if ulCoords.blockCol != urCoords.blockCol and \
-			ulCoords.blockRow == urCoords.blockRow and llCoords.blockRow == lrCoords.blockRow and \
-			ulCoords.row == urCoords.row and llCoords.row == lrCoords.row:
+			ulCoords.alignsByRow(urCoords) and llCoords.alignsByRow(lrCoords):
 			return True
 		else:
 			return False
