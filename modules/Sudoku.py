@@ -97,8 +97,8 @@ class Sudoku(object):
 			# Reduce numbers based on naked pairs/trios
 			self.__reduceNakedSets()
 
-			# Reduce numbers based on using the XYwing method
-			self.__reduceXYwing()
+			# Reduce numbers based on using the Ywing method
+			self.__reduceYwing()
 
 			# Reduce numbers based on multiple lines
 			self.__reduceMultipleLines()
@@ -317,6 +317,33 @@ class Sudoku(object):
 				itemInList = True
 				break
 		return itemInList
+
+	def __coordsIntersection(self, coords1, coords2):
+		sharedCoords1 = self.__coordsSeenBy(coords1)
+		sharedCoords2 = self.__coordsSeenBy(coords2)
+
+		return sharedCoords1.intersection(sharedCoords2)
+
+	# Returns a set of all coordinates that are in the same block, row, and column as the input coordinates
+	def __coordsSeenBy(self, centerCoord):
+		uniqueCoords = set()
+
+		# Store all coordinates in the same block as centerCoord
+		for coord in self.__blockCellCoordsIter(centerCoord.blockRow, centerCoord.blockCol):
+			uniqueCoords.add(coord)
+
+		# Store all coordinates in the same row as centerCoord
+		for coord in self.__rowCellCoordsIter(centerCoord.blockRow, centerCoord.row):
+			uniqueCoords.add(coord)
+
+		# Store all coordinates in the same column as centerCoord
+		for coord in self.__colCellCoordsIter(centerCoord.blockCol, centerCoord.col):
+			uniqueCoords.add(coord)
+
+		# Remove centerCoord
+		uniqueCoords.discard(centerCoord)
+
+		return uniqueCoords
 	#
 	# Shared methods
 	###### END
@@ -819,16 +846,16 @@ class Sudoku(object):
 	###### END
 
 	###### START
-	# __reduceXYwing methods
+	# __reduceYwing methods
 	#
-	def __reduceXYwing(self):
-		# Reduce XY wing sets by row
-		self.__findXYwingSets(self.__rowCoordsIter)
+	def __reduceYwing(self):
+		# Reduce Y wing sets by row
+		self.__findYwingSets(self.__rowCoordsIter)
 
-		# Reduce XY wing sets by column
-		self.__findXYwingSets(self.__columnCoordsIter)
+		# Reduce Y wing sets by column
+		self.__findYwingSets(self.__columnCoordsIter)
 
-	def __findXYwingSets(self, coordIter):
+	def __findYwingSets(self, coordIter):
 
 		# Iterate through each row/column in the sudoku grid
 		for cellCoordinatesList in coordIter():
@@ -836,9 +863,9 @@ class Sudoku(object):
 			# Iterate through each cell's coordinates and create all pairwise combinations
 			# Keep only the pairs of coordinates in different blocks and each contain
 			# exactly 2 notes.
-			for cellCoordsList in filter(self.__validXYwingPair, combinations(cellCoordinatesList, 2)):
+			for cellCoordsList in filter(self.__validYwingPair, combinations(cellCoordinatesList, 2)):
 
-				# These 2 cells make up a valid potential XY wing pair
+				# These 2 cells make up a valid potential Y wing pair
 				cell1 = cellCoordsList[0]
 				cell2 = cellCoordsList[1]
 
@@ -854,17 +881,38 @@ class Sudoku(object):
 
 					# Check each block that is a parent to each cell for any cells that have notes
 					# equal to newNotes
-					self.__findBentCell(newNotes, cell1, cell2)
-					self.__findBentCell(newNotes, cell2, cell1)
+					self.__findYCellByBlock(newNotes, cell1, cell2)
+					self.__findYCellByBlock(newNotes, cell2, cell1)
 
-	def __findBentCell(self, searchNotes, cell1, cell2):
+					# Check each row/col that is a parent to each cell for any cells that have notes
+					# equal to newNotes
+					self.__findYCellByRowCol(newNotes, cell1, cell2)
+					self.__findYCellByRowCol(newNotes, cell2, cell1)
+
+	def __findYCellByBlock(self, searchNotes, cell1, cell2):
 		if cell1.alignsByRow(cell2):
 			alignType = 'row'
 		elif cell1.alignsByCol(cell2):
 			alignType = 'col'
 
+		coordsIter = self.__blockCellCoordsIter(cell1.blockRow, cell1.blockCol)
+
+		self.__reduceYWingCell(searchNotes, cell1, cell2, alignType, coordsIter)
+
+	def __findYCellByRowCol(self, searchNotes, cell1, cell2):
+		if cell1.alignsByRow(cell2):
+			alignType = 'row'
+			coordsIter = self.__colCellCoordsIter(cell1.blockCol, cell1.col)
+		elif cell1.alignsByCol(cell2):
+			alignType = 'col'
+			coordsIter = self.__rowCellCoordsIter(cell1.blockRow, cell1.row)
+
+		self.__reduceYWingCell(searchNotes, cell1, cell2, alignType, coordsIter)
+
+	def __reduceYWingCell(self, searchNotes, cell1, cell2, alignType, coordsIter):
+
 		# Iterate through each cell in cell1's block
-		for coords in self.__blockCellCoordsIter(cell1.blockRow, cell1.blockCol):
+		for coords in coordsIter:
 
 			# Start looking for a valid bent cell that has the same cell notes as searchNotes
 			noteNums = self.getCellNotes(
@@ -874,52 +922,40 @@ class Sudoku(object):
 				coords.col,
 			)
 			if noteNums == searchNotes:
-				validXYWing = False
+				validYWing = False
 
 				# If cell1 and cell2 are aligned by row or column, make
 				# sure the new cell does not also align by row or column respectively
 				if alignType == 'row' and not cell1.alignsByRow(coords):
-					validXYWing = True
+					validYWing = True
 				elif alignType == 'col' and not cell1.alignsByCol(coords):
-					validXYWing = True
+					validYWing = True
 
 				# All criteria is perfect to do xy wing technique.
-				if validXYWing:
-					# Find the number to remove and the cell to remove the number from
-					removeNum, removeCoords = self.__intersectXYWingCells(
+				if validYWing:
+					# Find the number to remove and the cells to remove the number from
+					removeNum, removeCoords = self.__intersectYWingCells(
 						coords,
 						cell2,
-						alignType,
 					)
 
-					self.__clearCellNoteNumberAndSet(
-						removeNum,
-						removeCoords.blockRow,
-						removeCoords.blockCol,
-						removeCoords.row,
-						removeCoords.col,
-					)
+					for rCoords in removeCoords:
+						self.__clearCellNoteNumberAndSet(
+							removeNum,
+							rCoords.blockRow,
+							rCoords.blockCol,
+							rCoords.row,
+							rCoords.col,
+						)
 
-	def __intersectXYWingCells(self, bentCell, cell2, alignType):
+	def __intersectYWingCells(self, cell1, cell2):
 		# Get the number shared between both sets of notes
 		# This number will be removed from the intersection between the 2 cells
-		sharedNotes = self.__notesInCommon(bentCell, cell2)
+		sharedNotes = self.__notesInCommon(cell1, cell2)
 		removeNum = sharedNotes.pop()
 
-		if alignType == 'row':
-			removeCoords = SudokuCoordinates(
-				bentCell.blockRow,
-				cell2.blockCol,
-				bentCell.row,
-				cell2.col,
-			)
-		elif alignType == 'col':
-			removeCoords = SudokuCoordinates(
-				cell2.blockRow,
-				bentCell.blockCol,
-				cell2.row,
-				bentCell.col,
-			)
+		# Get the cells that can be seen between both cells
+		removeCoords = list(self.__coordsIntersection(cell1, cell2))
 
 		return removeNum, removeCoords
 
@@ -940,7 +976,7 @@ class Sudoku(object):
 
 		return noteNums1.intersection(noteNums2)
 
-	def __validXYwingPair(self, x):
+	def __validYwingPair(self, x):
 		if x[0].alignsByBlock(x[1]):
 			return False
 		else:
@@ -962,7 +998,7 @@ class Sudoku(object):
 			else:
 				return False
 	#
-	# __reduceXYwing methods
+	# __reduceYwing methods
 	###### END
 
 	###### START
@@ -1173,7 +1209,6 @@ class Sudoku(object):
 	def __blockCellCoordsIter(self, blockRow, blockCol):
 		for row, col in doubleIter(3):
 			yield SudokuCoordinates(blockRow, blockCol, row, col)
-
 	#
 	# Private Iterator Methods
 	######### END
