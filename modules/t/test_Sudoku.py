@@ -89,8 +89,8 @@ class TestSudoku(unittest.TestCase):
 
 		self.__validateSolver(startData, solvedData)
 
-	# Tests the xy wing solver using a puzzle that requires the xy wing technique
-	def test_solveXYWing(self):
+	# Tests the y wing solver using a puzzle that requires the y wing technique
+	def test_solveYWing(self):
 
 		startData = [
 			['9', '6', '3', '5', '1', '8', '7', '4', '2'],
