@@ -1,7 +1,9 @@
 - Modify unittesting for test_Sudoku.py to test on puzzles that each require specific techniques
 	- Find reduceXwing puzzle to test XwingRow method
+- Rename notes -> candidates for method names/comments
 - Add unique rectangle technique
 - Add forcing chain technique
 - Find a technique to solve the puzzleExtreme.txt puzzle
 - Check invalid starting values (XwingCol2 bottom 3 rows shifted 1 right)
+- Add a puzzle evaluator that grades a puzzle based on all the techniques required to solve
 - Generalize to any size grid.  Currently hardcoded to 3
