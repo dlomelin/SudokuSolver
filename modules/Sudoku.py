@@ -100,6 +100,9 @@ class Sudoku(object):
 			# Reduce numbers based on using the Ywing method
 			self.__reduceYwing()
 
+			# Reduce numbers based on using the Ywing method
+			self.__reduceXYZwing()
+
 			# Reduce numbers based on multiple lines
 			self.__reduceMultipleLines()
 
@@ -318,11 +321,17 @@ class Sudoku(object):
 				break
 		return itemInList
 
-	def __coordsIntersection(self, coords1, coords2):
-		sharedCoords1 = self.__coordsSeenBy(coords1)
-		sharedCoords2 = self.__coordsSeenBy(coords2)
+	def __coordsIntersection(self, *coordsList):
+		seenCoordsList = []
+		for coords in coordsList:
+			sharedCoords = self.__coordsSeenBy(coords)
+			seenCoordsList.append(sharedCoords)
 
-		return sharedCoords1.intersection(sharedCoords2)
+		intersectingCoords = seenCoordsList[0]
+		for i in range(1, len(seenCoordsList)):
+			intersectingCoords = intersectingCoords.intersection(seenCoordsList[i])
+
+		return intersectingCoords
 
 	# Returns a set of all coordinates that are in the same block, row, and column as the input coordinates
 	def __coordsSeenBy(self, centerCoord):
@@ -955,7 +964,7 @@ class Sudoku(object):
 		removeNum = sharedNotes.pop()
 
 		# Get the cells that can be seen between both cells
-		removeCoords = list(self.__coordsIntersection(cell1, cell2))
+		removeCoords = self.__coordsIntersection(cell1, cell2)
 
 		return removeNum, removeCoords
 
@@ -999,6 +1008,67 @@ class Sudoku(object):
 				return False
 	#
 	# __reduceYwing methods
+	###### END
+
+	###### START
+	# __reduceXYZwing methods
+	#
+	def __reduceXYZwing(self):
+
+		# Iterate through each row in the sudoku grid
+		for cellCoordinatesList in self.__rowCoordsIter():
+
+			# Iterate through each cell's coordinates
+			for cellCoords in cellCoordinatesList:
+
+				# 
+				self.__findPotentialXYZwing(cellCoords)
+
+	def __findPotentialXYZwing(self, coords):
+
+		# Look for a pivot point that has 3 unknown notes
+		noteNums = self.getCellNotes(
+			coords.blockRow,
+			coords.blockCol,
+			coords.row,
+			coords.col,
+		)
+
+		# XYZ requires the pivot to contain 3 notes
+		if len(noteNums) == 3:
+
+			coordsList = []
+			notesList = []
+
+			# Look for all cells that are seen by the current cell
+			for cellCoords in self.__coordsSeenBy(coords):
+
+				# Look for a pivot point that has 3 unknown notes
+				cellNums = self.getCellNotes(
+					cellCoords.blockRow,
+					cellCoords.blockCol,
+					cellCoords.row,
+					cellCoords.col,
+				)
+				if len(cellNums) == 2 and cellNums.issubset(noteNums):
+					coordsList.append(cellCoords)
+					notesList.append(cellNums)
+
+			if len(coordsList) == 2 and len(notesList[0].union(notesList[1])) == 3:
+				commonSet = notesList[0].intersection(notesList[1])
+				removeNum = commonSet.pop()
+
+				for rCoords in self.__coordsIntersection(coords, coordsList[0], coordsList[1]):
+					self.__clearCellNoteNumberAndSet(
+						removeNum,
+						rCoords.blockRow,
+						rCoords.blockCol,
+						rCoords.row,
+						rCoords.col,
+					)
+
+	#
+	# __reduceXYZwing methods
 	###### END
 
 	###### START
