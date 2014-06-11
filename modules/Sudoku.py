@@ -353,6 +353,26 @@ class Sudoku(object):
 		uniqueCoords.discard(centerCoord)
 
 		return uniqueCoords
+
+	def __validCellsSeenBy(self, coords, pivotCellNotes, validCellFunction):
+		coordsList = []
+		notesList = []
+
+		# Iterate across all cells that are seen by the current cell
+		for cellCoords in self.__coordsSeenBy(coords):
+
+			# Look for cells that pass the criteria set forth by validCellFunction
+			cellNotes = self.getCellNotes(
+				cellCoords.blockRow,
+				cellCoords.blockCol,
+				cellCoords.row,
+				cellCoords.col,
+			)
+			if validCellFunction(pivotCellNotes, cellNotes):
+				coordsList.append(cellCoords)
+				notesList.append(cellNotes)
+
+		return coordsList, notesList
 	#
 	# Shared methods
 	###### END
@@ -858,154 +878,55 @@ class Sudoku(object):
 	# __reduceYwing methods
 	#
 	def __reduceYwing(self):
-		# Reduce Y wing sets by row
-		self.__findYwingSets(self.__rowCoordsIter)
 
-		# Reduce Y wing sets by column
-		self.__findYwingSets(self.__columnCoordsIter)
+		# Iterate through each row in the sudoku grid
+		for cellCoordinatesList in self.__rowCoordsIter():
 
-	def __findYwingSets(self, coordIter):
+			# Iterate through each cell's coordinates
+			for cellCoords in cellCoordinatesList:
 
-		# Iterate through each row/column in the sudoku grid
-		for cellCoordinatesList in coordIter():
+				# Perform Y wing technique
+				self.__findPotentialYwing(cellCoords)
 
-			# Iterate through each cell's coordinates and create all pairwise combinations
-			# Keep only the pairs of coordinates in different blocks and each contain
-			# exactly 2 notes.
-			for cellCoordsList in filter(self.__validYwingPair, combinations(cellCoordinatesList, 2)):
+	def __findPotentialYwing(self, coords):
 
-				# These 2 cells make up a valid potential Y wing pair
-				cell1 = cellCoordsList[0]
-				cell2 = cellCoordsList[1]
+		# Look for a pivot cell that has 2 unknown notes
+		pivotCellNotes = self.getCellNotes(
+			coords.blockRow,
+			coords.blockCol,
+			coords.row,
+			coords.col,
+		)
 
-				# Get the notes for each cell
-				cell1Notes = self.getCellNotes(cell1.blockRow, cell1.blockCol, cell1.row, cell1.col)
-				cell2Notes = self.getCellNotes(cell2.blockRow, cell2.blockCol, cell2.row, cell2.col)
+		# Y wing requires the pivot cell to contain exactly 2 notes
+		if len(pivotCellNotes) == 2:
 
-				# Create a new set that contains the numbers different between both cells
-				# Only cell pairs that have 1 element in common are valid xy wing pairs
-				# eg, set([1,2]) + set([2,3]) = valid pair since symmetric difference = set([1,3])
-				newNotes = cell1Notes.symmetric_difference(cell2Notes)
-				if len(newNotes) == 2:
+			# Get a list of coordinates and notes seen by the current cell
+			coordsList, notesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validYCell)
 
-					# Check each block that is a parent to each cell for any cells that have notes
-					# equal to newNotes
-					self.__findYCellByBlock(newNotes, cell1, cell2)
-					self.__findYCellByBlock(newNotes, cell2, cell1)
+			# Iterate through all pairs of cells
+			for indexList in combinations(range(len(coordsList)), 2):
 
-					# Check each row/col that is a parent to each cell for any cells that have notes
-					# equal to newNotes
-					self.__findYCellByRowCol(newNotes, cell1, cell2)
-					self.__findYCellByRowCol(newNotes, cell2, cell1)
-
-	def __findYCellByBlock(self, searchNotes, cell1, cell2):
-		if cell1.alignsByRow(cell2):
-			alignType = 'row'
-		elif cell1.alignsByCol(cell2):
-			alignType = 'col'
-
-		coordsIter = self.__blockCellCoordsIter(cell1.blockRow, cell1.blockCol)
-
-		self.__reduceYWingCell(searchNotes, cell1, cell2, alignType, coordsIter)
-
-	def __findYCellByRowCol(self, searchNotes, cell1, cell2):
-		if cell1.alignsByRow(cell2):
-			alignType = 'row'
-			coordsIter = self.__colCellCoordsIter(cell1.blockCol, cell1.col)
-		elif cell1.alignsByCol(cell2):
-			alignType = 'col'
-			coordsIter = self.__rowCellCoordsIter(cell1.blockRow, cell1.row)
-
-		self.__reduceYWingCell(searchNotes, cell1, cell2, alignType, coordsIter)
-
-	def __reduceYWingCell(self, searchNotes, cell1, cell2, alignType, coordsIter):
-
-		# Iterate through each cell in cell1's block
-		for coords in coordsIter:
-
-			# Start looking for a valid bent cell that has the same cell notes as searchNotes
-			noteNums = self.getCellNotes(
-				coords.blockRow,
-				coords.blockCol,
-				coords.row,
-				coords.col,
-			)
-			if noteNums == searchNotes:
-				validYWing = False
-
-				# If cell1 and cell2 are aligned by row or column, make
-				# sure the new cell does not also align by row or column respectively
-				if alignType == 'row' and not cell1.alignsByRow(coords):
-					validYWing = True
-				elif alignType == 'col' and not cell1.alignsByCol(coords):
-					validYWing = True
-
-				# All criteria is perfect to do xy wing technique.
-				if validYWing:
-					# Find the number to remove and the cells to remove the number from
-					removeNum, removeCoords = self.__intersectYWingCells(
-						coords,
-						cell2,
-					)
-
-					for rCoords in removeCoords:
-						self.__clearCellNoteNumberAndSet(
-							removeNum,
-							rCoords.blockRow,
-							rCoords.blockCol,
-							rCoords.row,
-							rCoords.col,
+				commonSet = notesList[indexList[0]].intersection(notesList[indexList[1]])
+				if len(commonSet) == 1:
+					removeNum = commonSet.pop()
+					if not removeNum in pivotCellNotes:
+						removeCoords = self.__coordsIntersection(
+							coordsList[indexList[0]],
+							coordsList[indexList[1]],
 						)
 
-	def __intersectYWingCells(self, cell1, cell2):
-		# Get the number shared between both sets of notes
-		# This number will be removed from the intersection between the 2 cells
-		sharedNotes = self.__notesInCommon(cell1, cell2)
-		removeNum = sharedNotes.pop()
+						for rCoords in removeCoords:
+							self.__clearCellNoteNumberAndSet(
+								removeNum,
+								rCoords.blockRow,
+								rCoords.blockCol,
+								rCoords.row,
+								rCoords.col,
+							)
 
-		# Get the cells that can be seen between both cells
-		removeCoords = self.__coordsIntersection(cell1, cell2)
-
-		return removeNum, removeCoords
-
-	def __notesInCommon(self, coords1, coords2):
-		noteNums1 = self.getCellNotes(
-			coords1.blockRow,
-			coords1.blockCol,
-			coords1.row,
-			coords1.col,
-		)
-
-		noteNums2 = self.getCellNotes(
-			coords2.blockRow,
-			coords2.blockCol,
-			coords2.row,
-			coords2.col,
-		)
-
-		return noteNums1.intersection(noteNums2)
-
-	def __validYwingPair(self, x):
-		if x[0].alignsByBlock(x[1]):
-			return False
-		else:
-			# Store the cell pair's notes
-			noteNums1 = self.getCellNotes(
-				x[0].blockRow,
-				x[0].blockCol,
-				x[0].row,
-				x[0].col,
-			)
-			noteNums2 = self.getCellNotes(
-				x[1].blockRow,
-				x[1].blockCol,
-				x[1].row,
-				x[1].col,
-			)
-			if len(noteNums1) == 2 and len(noteNums2) == 2:
-				return True
-			else:
-				return False
+	def __validYCell(self, pivotCellNotes, cellNotes):
+		return len(cellNotes) == 2 and len(cellNotes.intersection(pivotCellNotes)) == 1
 	#
 	# __reduceYwing methods
 	###### END
@@ -1021,52 +942,51 @@ class Sudoku(object):
 			# Iterate through each cell's coordinates
 			for cellCoords in cellCoordinatesList:
 
-				# 
+				# Perform XYZ wing technique
 				self.__findPotentialXYZwing(cellCoords)
 
 	def __findPotentialXYZwing(self, coords):
 
 		# Look for a pivot point that has 3 unknown notes
-		noteNums = self.getCellNotes(
+		pivotCellNotes = self.getCellNotes(
 			coords.blockRow,
 			coords.blockCol,
 			coords.row,
 			coords.col,
 		)
 
-		# XYZ requires the pivot to contain 3 notes
-		if len(noteNums) == 3:
+		# XYZ wing requires the pivot cell to contain exactly 3 notes
+		if len(pivotCellNotes) == 3:
 
-			coordsList = []
-			notesList = []
+			# Get a list of coordinates and notes seen by the current cell
+			coordsList, notesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validXYZCell)
 
-			# Look for all cells that are seen by the current cell
-			for cellCoords in self.__coordsSeenBy(coords):
+			# Iterate through all pairs of cells
+			for indexList in combinations(range(len(coordsList)), 2):
 
-				# Look for a pivot point that has 3 unknown notes
-				cellNums = self.getCellNotes(
-					cellCoords.blockRow,
-					cellCoords.blockCol,
-					cellCoords.row,
-					cellCoords.col,
-				)
-				if len(cellNums) == 2 and cellNums.issubset(noteNums):
-					coordsList.append(cellCoords)
-					notesList.append(cellNums)
+				if len(notesList[indexList[0]].union(notesList[indexList[1]])) == 3:
+					commonSet = notesList[indexList[0]].intersection(notesList[indexList[1]])
+					removeNum = commonSet.pop()
 
-			if len(coordsList) == 2 and len(notesList[0].union(notesList[1])) == 3:
-				commonSet = notesList[0].intersection(notesList[1])
-				removeNum = commonSet.pop()
-
-				for rCoords in self.__coordsIntersection(coords, coordsList[0], coordsList[1]):
-					self.__clearCellNoteNumberAndSet(
-						removeNum,
-						rCoords.blockRow,
-						rCoords.blockCol,
-						rCoords.row,
-						rCoords.col,
+					removeCoords = self.__coordsIntersection(
+						coords,
+						coordsList[indexList[0]],
+						coordsList[indexList[1]],
 					)
 
+					for rCoords in removeCoords:
+						self.__clearCellNoteNumberAndSet(
+							removeNum,
+							rCoords.blockRow,
+							rCoords.blockCol,
+							rCoords.row,
+							rCoords.col,
+						)
+
+	# Look for cells that have 2 unknown notes that are all found
+	# within the pivot cell
+	def __validXYZCell(self, pivotCellNotes, cellNotes):
+		return len(cellNotes) == 2 and cellNotes.issubset(pivotCellNotes)
 	#
 	# __reduceXYZwing methods
 	###### END
