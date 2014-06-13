@@ -31,20 +31,10 @@ class SudokuCoordinates(object):
 	##################
 
 	def alignsByBlock(self, other):
-		if self.blockRow == other.blockRow and self.blockCol == other.blockCol:
-			return True
-		else:
-			return False
+		return self.blockRow == other.blockRow and self.blockCol == other.blockCol
 
 	def alignsByRow(self, other):
-		if self.blockRow == other.blockRow and self.row == other.row:
-			return True
-		else:
-			return False
+		return self.blockRow == other.blockRow and self.row == other.row
 
 	def alignsByCol(self, other):
-		if self.blockCol == other.blockCol and self.col == other.col:
-			return True
-		else:
-			return False
-
+		return self.blockCol == other.blockCol and self.col == other.col
