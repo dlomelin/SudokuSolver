@@ -4,9 +4,10 @@
 - Rename notes -> candidates for method names/comments
 - Consolidate XYZwing technique with other methods
 	- Use intersection and seen by methods across module?
-- Add unique rectangle technique
-- Add forcing chain technique
-- Find a technique to solve the puzzleExtreme.txt puzzle
+	- Refactor __reduceNakedSets to use intersection module
+	- Use WXYZwing technique to replace XYZ?
+- Add comments to WXYZwing
+- Add swordfish technique
 - Check invalid starting values (XwingCol2 bottom 3 rows shifted 1 right)
 - Add a puzzle evaluator that grades a puzzle based on all the techniques required to solve
 - Generalize to any size grid.  Currently hardcoded to 3
