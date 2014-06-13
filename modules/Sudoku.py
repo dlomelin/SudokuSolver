@@ -100,8 +100,11 @@ class Sudoku(object):
 			# Reduce numbers based on using the Ywing method
 			self.__reduceYwing()
 
-			# Reduce numbers based on using the Ywing method
+			# Reduce numbers based on using the XYZwing method
 			self.__reduceXYZwing()
+
+			# Reduce numbers based on using the WXYZwing method
+			self.__reduceWXYZwing()
 
 			# Reduce numbers based on multiple lines
 			self.__reduceMultipleLines()
@@ -373,6 +376,20 @@ class Sudoku(object):
 				notesList.append(cellNotes)
 
 		return coordsList, notesList
+
+	def __notesIntersection(self, *notesList):
+		notesIntersection = notesList[0]
+		for i in range(1, len(notesList)):
+			notesIntersection = notesIntersection.intersection(notesList[i])
+
+		return notesIntersection
+
+	def __notesUnion(self, *notesList):
+		notesUnion = notesList[0]
+		for i in range(1, len(notesList)):
+			notesUnion = notesUnion.union(notesList[i])
+
+		return notesUnion
 	#
 	# Shared methods
 	###### END
@@ -964,8 +981,14 @@ class Sudoku(object):
 			# Iterate through all pairs of cells
 			for indexList in combinations(range(len(coordsList)), 2):
 
-				if len(notesList[indexList[0]].union(notesList[indexList[1]])) == 3:
-					commonSet = notesList[indexList[0]].intersection(notesList[indexList[1]])
+				# Union between each pair
+				notesUnion = self.__notesUnion(
+					notesList[indexList[0]],
+					notesList[indexList[1]],
+				)
+
+				if len(notesUnion) == 3:
+					commonSet = self.__notesIntersection(notesList[indexList[0]], notesList[indexList[1]])
 					removeNum = commonSet.pop()
 
 					removeCoords = self.__coordsIntersection(
@@ -989,6 +1012,95 @@ class Sudoku(object):
 		return len(cellNotes) == 2 and cellNotes.issubset(pivotCellNotes)
 	#
 	# __reduceXYZwing methods
+	###### END
+
+	###### START
+	# __reduceWXYZwing methods
+	#
+	def __reduceWXYZwing(self):
+
+		# Iterate through each row in the sudoku grid
+		for cellCoordinatesList in self.__rowCoordsIter():
+
+			# Iterate through each cell's coordinates
+			for cellCoords in cellCoordinatesList:
+
+				# Perform WXYZ wing technique
+				self.__findPotentialWXYZwing(cellCoords)
+
+	def __findPotentialWXYZwing(self, coords):
+
+		pivotCellNotes = self.getCellNotes(
+			coords.blockRow,
+			coords.blockCol,
+			coords.row,
+			coords.col,
+		)
+
+		# Get a list of coordinates and notes seen by the current cell
+		coordsList, notesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validWXYZCell)
+
+		# Iterate through all pairs of cells
+		for indexList in combinations(range(len(coordsList)), 3):
+
+			notesUnion = self.__notesUnion(
+				pivotCellNotes,
+				notesList[indexList[0]],
+				notesList[indexList[1]],
+				notesList[indexList[2]],
+			)
+
+			if len(notesUnion) == 4:
+				removeNum = self.__findNonRestrictedCandidate(
+					[notesList[indexList[0]], notesList[indexList[1]], notesList[indexList[2]]],
+					[coordsList[indexList[0]], coordsList[indexList[1]], coordsList[indexList[2]]],
+				)
+
+				if not removeNum is None:
+
+					coordsForIntersection = []
+					if removeNum in pivotCellNotes:
+						coordsForIntersection.append(coords)
+					for i in range(3):
+						if removeNum in notesList[indexList[i]]:
+							coordsForIntersection.append(coordsList[indexList[i]])
+
+					removeCoords = self.__coordsIntersection(*coordsForIntersection)
+
+					for rCoords in removeCoords:
+						self.__clearCellNoteNumberAndSet(
+							removeNum,
+							rCoords.blockRow,
+							rCoords.blockCol,
+							rCoords.row,
+							rCoords.col,
+						)
+
+	def __findNonRestrictedCandidate(self, notesList, coordsList):
+		candidateSet = set()
+
+		# Iterate through each pair of cells
+		for indexList in combinations(range(len(coordsList)), 2):
+
+			# Look for cells that can't see each other
+			if not coordsList[indexList[0]].alignsByRow(coordsList[indexList[1]]) and \
+				not coordsList[indexList[0]].alignsByCol(coordsList[indexList[1]]) and \
+				not coordsList[indexList[0]].alignsByBlock(coordsList[indexList[1]]):
+
+				# Look for the numbers shared in common between both cells
+				intersectionSet = notesList[indexList[0]].intersection(notesList[indexList[1]])
+				candidateSet = candidateSet.union(intersectionSet)
+
+		if len(candidateSet) == 1:
+			return candidateSet.pop()
+		else:
+			return None
+
+	# Look for cells that have cell notes and at least 1 number in common
+	def __validWXYZCell(self, pivotCellNotes, cellNotes):
+		return len(cellNotes) >= 2 and len(cellNotes.intersection(pivotCellNotes)) >= 1
+	#
+	# __reduceWXYZwing methods
 	###### END
 
 	###### START
