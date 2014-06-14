@@ -1,7 +1,7 @@
 import os, sys
 from itertools import combinations
 
-from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList, pairwiseIter
+from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList, pairwiseIter, tripletIter
 from SudokuSolver.modules.SudokuBlock import SudokuBlock
 from SudokuSolver.modules.SudokuCoordinates import SudokuCoordinates
 
@@ -93,6 +93,9 @@ class Sudoku(object):
 
 			# Reduce numbers based on using the xwing method
 			self.__reduceXwing()
+
+			# Reduce numbers based on using the swordfish method
+			#self.__reduceSwordfish()
 
 			# Reduce numbers based on naked pairs/trios
 			self.__reduceNakedSets()
@@ -746,31 +749,22 @@ class Sudoku(object):
 	# Ensures the 4 cells properly align to form xwing cells, which are
 	# required for the xwing method to work
 	def __validXwingRowCells(self, ulCoords, urCoords, llCoords, lrCoords):
-		# Ensures the rows are in different blockRows
 		# Ensures the upperleft and lowerleft coords are in the same grid column
 		# Ensures the upperright and lowerright coords are in the same grid column
-		if ulCoords.blockRow != llCoords.blockRow and \
-			ulCoords.alignsByCol(llCoords) and urCoords.alignsByCol(lrCoords):
-			return True
-		else:
-			return False
+		return ulCoords.alignsByCol(llCoords) and urCoords.alignsByCol(lrCoords)
 
 	# Ensures the 4 cells properly align to form xwing cells, which are
 	# required for the xwing method to work
 	def __validXwingColCells(self, ulCoords, llCoords, urCoords, lrCoords):
-		# Ensures the columns are in different blockColumns
 		# Ensures the upperleft and upperright coords are in the same grid row
 		# Ensures the lowerleft and lowerright coords are in the same grid row
-		if ulCoords.blockCol != urCoords.blockCol and \
-			ulCoords.alignsByRow(urCoords) and llCoords.alignsByRow(lrCoords):
-			return True
-		else:
-			return False
+		return ulCoords.alignsByRow(urCoords) and llCoords.alignsByRow(lrCoords)
 
 	# Search all rows/columns for pairs of cells that are the 2 remaining
 	# cells that can contain 1 specific number
 	def __potentialXwings(self, coordIter):
 		potentialXwings = numDictList(3)
+
 		# Iterate through each row/cell in the sudoku grid
 		for cellCoordinatesList in coordIter():
 			hintCoords = numDictList(3)
@@ -797,6 +791,104 @@ class Sudoku(object):
 		return potentialXwings
 	#
 	# __reduceXwing methods
+	###### END
+
+	###### START
+	# __reduceSwordfish methods
+	#
+	def __reduceSwordfish(self):
+		# Search for valid xwing cells along rows to reduce notes along the columns
+		self.__reduceSwordfishRow()
+
+		# Search for valid xwing cells along columns to reduce notes along the rows
+		self.__reduceSwordfishCol()
+
+	def __reduceSwordfishRow(self):
+		potentialSwordfish = self.__potentialSwordfish(self.__rowCoordsIter)
+
+		# Iterate through each number
+		for num in potentialSwordfish:
+
+			# Iterate through all possible row triplets
+			for data1, data2, data3 in tripletIter(potentialSwordfish[num]):
+				if self.__validSwordfishColCells(data1, data2, data3):
+					print '-- %s --' % (num)
+					print data1
+					print data2
+					print data3
+					print 'VALID'
+
+					"""
+					# Remove the number from the notes along the column
+					self.__removeNotesByIter(
+						num,
+						self.__colCellCoordsIter,
+						data1[0].blockCol,
+						data1[0].col,
+						[data1[0], data2[0], data3[0]],
+					)
+
+					# Remove the number from the notes along the column
+					self.__removeNotesByIter(
+						num,
+						self.__colCellCoordsIter,
+						data1[1].blockCol,
+						data1[1].col,
+						[data1[1], data2[1], data3[1]],
+					)
+					"""
+
+	def __reduceSwordfishCol(self):
+		potentialSwordfish = self.__potentialSwordfish(self.__columnCoordsIter)
+
+	# Search all rows/columns for pairs of cells that are the 2 remaining
+	# cells that can contain 1 specific number
+	def __potentialSwordfish(self, coordIter):
+		potentialSwordfish = numDictList(3)
+
+		# Iterate through each row/cell in the sudoku grid
+		for cellCoordinatesList in coordIter():
+			hintCoords = numDictList(3)
+
+			# Iterate through each cell's coordinates
+			for cellCoords in cellCoordinatesList:
+
+				# Loop through all notes in the current cell
+				noteNums = self.getCellNotes(
+					cellCoords.blockRow,
+					cellCoords.blockCol,
+					cellCoords.row,
+					cellCoords.col,
+				)
+				for num in noteNums:
+					# Store the current coordinates
+					hintCoords[num].append(cellCoords)
+
+			# Keep only the cells that have exactly 2 numbers left in the row/column
+			for num in hintCoords:
+				if len(hintCoords[num]) <= 3:
+					potentialSwordfish[num].append(hintCoords[num])
+
+		return potentialSwordfish
+
+	def __validSwordfishColCells(self, data1, data2, data3):
+		colData = DictCounter()
+
+		for coords in data1:
+			col = '%s,%s' % (coords.blockCol, coords.col)
+			colData.add(col)
+
+		for coords in data2:
+			col = '%s,%s' % (coords.blockCol, coords.col)
+			colData.add(col)
+
+		for coords in data3:
+			col = '%s,%s' % (coords.blockCol, coords.col)
+			colData.add(col)
+
+		return colData.keyCount() == 3 and colData.countsGE(2) and data1 and data2 and data3
+	#
+	# __reduceSwordfish methods
 	###### END
 
 	###### START
@@ -1314,3 +1406,24 @@ class Sudoku(object):
 	#
 	# Private Iterator Methods
 	######### END
+
+class DictCounter(object):
+	def __init__(self):
+		self.__counts = {}
+
+	def countsGE(self, size):
+		status = True
+		for key in self.__counts.keys():
+			if self.__counts[key] < size:
+				status = False
+				break
+		return status
+
+	def add(self, key):
+		try:
+			self.__counts[key] += 1
+		except:
+			self.__counts[key] = 1
+
+	def keyCount(self):
+		return len(self.__counts)
