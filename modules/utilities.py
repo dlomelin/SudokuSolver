@@ -36,3 +36,10 @@ def pairwiseIter(data):
 	for i in range(dataLen-1):
 		for j in range(i+1, dataLen):
 			yield data[i], data[j]
+
+def tripletIter(data):
+	dataLen = len(data)
+	for i in range(dataLen-2):
+		for j in range(i+1, dataLen-1):
+			for k in range(j+1, dataLen):
+				yield data[i], data[j], data[k]
