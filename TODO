@@ -1,6 +1,5 @@
 - Modify unittesting for test_Sudoku.py to test on puzzles that each require specific techniques
 	- Find reduceXwing puzzle to test XwingRow method
-	- Add puzzleYwing.txt to unit test
 - Rename notes -> candidates for method names/comments
 - Consolidate XYZwing technique with other methods
 	- Use intersection and seen by methods across module?
