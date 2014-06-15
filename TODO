@@ -2,20 +2,22 @@
 	- Find reduceXwing puzzle to test XwingRow method
 	- Add wxyz puzzles
 	- Add swordfish puzzles
+
 - Rename notes -> candidates for method names/comments
+
 - Consolidate XYZwing technique with other methods
 	- Use intersection and seen by methods across module?
 	- Refactor __reduceNakedSets to use intersection module
 	- Use WXYZwing technique to replace XYZ?
-- Add comments to WXYZwing technique
-- Add comments to swordfish technique
 
-- Refactor swordfish technique
-	- Make it variable dependent, ie 2 = xwing, 3 = swordfish, 4 = jellyfish
+- Add comments to WXYZwing technique
+- Add comments to xwing, swordfish, jellyfish technique
+
 - Add more techniques
-	- Jellyfish
 	- X-Cycles
 
+- Track statistics of which techniques were used to solve a puzzle
+	- Evaluate the puzzle based on all the techniques required to solve it
+
 - Check invalid starting values (XwingCol2 bottom 3 rows shifted 1 right)
-- Add a puzzle evaluator that grades a puzzle based on all the techniques required to solve
 - Generalize to any size grid.  Currently hardcoded to 3
