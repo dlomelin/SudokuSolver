@@ -1,5 +1,5 @@
 import os, sys
-from itertools import combinations
+from itertools import combinations, chain
 
 from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList, pairwiseIter, tripletIter
 from SudokuSolver.modules.SudokuBlock import SudokuBlock
@@ -91,11 +91,8 @@ class Sudoku(object):
 			# Removes the number along the same row or column but in neighboring blocks.
 			self.__reduceCandidateLines()
 
-			# Reduce numbers based on using the xwing method
-			self.__reduceXwing()
-
-			# Reduce numbers based on using the swordfish method (3x3 xwing)
-			self.__reduceSwordfish()
+			# Reduce numbers based on using the xwing, swordfish, and jellyfish techniques
+			self.__reduceXwingSwordfishJellyfish()
 
 			# Reduce numbers based on naked pairs/trios
 			self.__reduceNakedSets()
@@ -512,7 +509,6 @@ class Sudoku(object):
 						cellCoords.row,
 						cellCoords.col,
 					)
-
 	#
 	# __init__ methods
 	###### END
@@ -661,162 +657,33 @@ class Sudoku(object):
 	###### END
 
 	###### START
-	# __reduceXwing methods
+	# __reduceXwingSwordfishJellyfish methods
 	#
-	def __reduceXwing(self):
-		# Search for valid xwing cells along rows to reduce notes along the columns
-		self.__reduceXwingRow()
+	def __reduceXwingSwordfishJellyfish(self):
 
-		# Search for valid xwing cells along columns to reduce notes along the rows
-		self.__reduceXwingCol()
+		# 2 = Xwing  3 = Swordfish  4 = Jellyfish
+		for cellCount in range(2, 5):
+			# Search for valid xwing cells along rows to reduce notes along the columns
+			self.__reduceXwingSwordJellyRow(cellCount)
 
-	# Search for valid xwing cells along rows to reduce notes along the columns
-	def __reduceXwingRow(self):
+			# Search for valid xwing cells along columns to reduce notes along the rows
+			self.__reduceXwingSwordJellyCol(cellCount)
 
-		# Search all rows for pairs of cells that are the 2 remaining
-		# cells that can contain 1 specific number
-		potentialXwings = self.__potentialXwings(self.__rowCoordsIter)
+	def __reduceXwingSwordJellyRow(self, cellCount):
+
+		potentialCells = self.__potentialRectangleCells(cellCount, self.__rowCoordsIter)
 
 		# Iterate through each number
-		for num in potentialXwings:
-
-			# Iterate through all possible pairs of cells
-			for data1, data2 in pairwiseIter(potentialXwings[num]):
-
-				# data1[0] = ulCoords, data1[1] = urCoords
-				# data2[0] = llCoords, data2[1] = lrCoords
-
-				# Ensures the 4 cells properly align to form xwing cells, which are
-				# required for the xwing method to work
-				if self.__validXwingRowCells(data1[0], data1[1], data2[0], data2[1]):
-
-					# Remove the number from the notes along the column
-					self.__removeNotesByIter(
-						num,
-						self.__colCellCoordsIter,
-						data1[0].blockCol,
-						data1[0].col,
-						[data1[0], data2[0]],
-					)
-
-					# Remove the number from the notes along the column
-					self.__removeNotesByIter(
-						num,
-						self.__colCellCoordsIter,
-						data1[1].blockCol,
-						data1[1].col,
-						[data1[1], data2[1]],
-					)
-
-	# Search for valid xwing cells along columns to reduce notes along the rows
-	def __reduceXwingCol(self):
-
-		# Search all columns for pairs of cells that are the 2 remaining
-		# cells that can contain 1 specific number
-		potentialXwings = self.__potentialXwings(self.__columnCoordsIter)
-
-		# Iterate through each number
-		for num in potentialXwings:
-
-			# Iterate through all possible pairs of cells
-			for data1, data2 in pairwiseIter(potentialXwings[num]):
-
-				# data1[0] = ulCoords, data1[1] = llCoords
-				# data2[0] = urCoords, data2[1] = lrCoords
-
-				# Ensures the 4 cells properly align to form xwing cells, which are
-				# required for the xwing method to work
-				if self.__validXwingColCells(data1[0], data1[1], data2[0], data2[1]):
-
-					# Remove the number from the notes along the row
-					self.__removeNotesByIter(
-						num,
-						self.__rowCellCoordsIter,
-						data1[0].blockRow,
-						data1[0].row,
-						[data1[0], data2[0]],
-					)
-
-					# Remove the number from the notes along the row
-					self.__removeNotesByIter(
-						num,
-						self.__rowCellCoordsIter,
-						data1[1].blockRow,
-						data1[1].row,
-						[data1[1], data2[1]],
-					)
-
-	# Ensures the 4 cells properly align to form xwing cells, which are
-	# required for the xwing method to work
-	def __validXwingRowCells(self, ulCoords, urCoords, llCoords, lrCoords):
-		# Ensures the upperleft and lowerleft coords are in the same grid column
-		# Ensures the upperright and lowerright coords are in the same grid column
-		return ulCoords.alignsByCol(llCoords) and urCoords.alignsByCol(lrCoords)
-
-	# Ensures the 4 cells properly align to form xwing cells, which are
-	# required for the xwing method to work
-	def __validXwingColCells(self, ulCoords, llCoords, urCoords, lrCoords):
-		# Ensures the upperleft and upperright coords are in the same grid row
-		# Ensures the lowerleft and lowerright coords are in the same grid row
-		return ulCoords.alignsByRow(urCoords) and llCoords.alignsByRow(lrCoords)
-
-	# Search all rows/columns for pairs of cells that are the 2 remaining
-	# cells that can contain 1 specific number
-	def __potentialXwings(self, coordIter):
-		potentialXwings = numDictList(3)
-
-		# Iterate through each row/cell in the sudoku grid
-		for cellCoordinatesList in coordIter():
-			hintCoords = numDictList(3)
-
-			# Iterate through each cell's coordinates
-			for cellCoords in cellCoordinatesList:
-
-				# Loop through all notes in the current cell
-				noteNums = self.getCellNotes(
-					cellCoords.blockRow,
-					cellCoords.blockCol,
-					cellCoords.row,
-					cellCoords.col,
-				)
-				for num in noteNums:
-					# Store the current coordinates
-					hintCoords[num].append(cellCoords)
-
-			# Keep only the cells that have exactly 2 numbers left in the row/column
-			for num in hintCoords:
-				if len(hintCoords[num]) == 2:
-					potentialXwings[num].append(hintCoords[num])
-
-		return potentialXwings
-	#
-	# __reduceXwing methods
-	###### END
-
-	###### START
-	# __reduceSwordfish methods
-	#
-	def __reduceSwordfish(self):
-		# Search for valid xwing cells along rows to reduce notes along the columns
-		self.__reduceSwordfishRow()
-
-		# Search for valid xwing cells along columns to reduce notes along the rows
-		self.__reduceSwordfishCol()
-
-	def __reduceSwordfishRow(self):
-		potentialSwordfish = self.__potentialSwordfish(self.__rowCoordsIter)
-
-		# Iterate through each number
-		for num in potentialSwordfish:
+		for num in potentialCells:
 
 			# Iterate through all possible row triplets
-			for data1, data2, data3 in tripletIter(potentialSwordfish[num]):
+			for dataset in combinations(potentialCells[num], cellCount):
 
 				# Checks if the current triplet of rows forms a valid Swordfish across 3 columns
-				if self.__validSwordfishColCells(data1, data2, data3):
+				if self.__validRectangleColCells(cellCount, *dataset):
 
 					# Iterate through the 3 affected columns
-					for blockCoords in self.__columnsInCommon(data1, data2, data3):
+					for blockCoords in self.__columnsInCommon(*dataset):
 
 						# Remove the number from the notes along the column, excluding the cells
 						# that make up the Swordfish
@@ -825,23 +692,24 @@ class Sudoku(object):
 							self.__colCellCoordsIter,
 							blockCoords.blockCol,
 							blockCoords.col,
-							data1 + data2 + data3,
+							list(chain(*dataset)),
 						)
 
-	def __reduceSwordfishCol(self):
-		potentialSwordfish = self.__potentialSwordfish(self.__columnCoordsIter)
+	def __reduceXwingSwordJellyCol(self, cellCount):
+
+		potentialCells = self.__potentialRectangleCells(cellCount, self.__columnCoordsIter)
 
 		# Iterate through each number
-		for num in potentialSwordfish:
+		for num in potentialCells:
 
-			# Iterate through all possible row triplets
-			for data1, data2, data3 in tripletIter(potentialSwordfish[num]):
+			# Iterate through all possible cellCount cells
+			for dataset in combinations(potentialCells[num], cellCount):
 
 				# Checks if the current triplet of rows forms a valid Swordfish across 3 rows
-				if self.__validSwordfishRowCells(data1, data2, data3):
+				if self.__validRectangleRowCells(cellCount, *dataset):
 
 					# Iterate through the 3 affected rows
-					for blockCoords in self.__rowsInCommon(data1, data2, data3):
+					for blockCoords in self.__rowsInCommon(*dataset):
 
 						# Remove the number from the notes along the row, excluding the cells
 						# that make up the Swordfish
@@ -850,40 +718,11 @@ class Sudoku(object):
 							self.__rowCellCoordsIter,
 							blockCoords.blockRow,
 							blockCoords.row,
-							data1 + data2 + data3,
+							list(chain(*dataset)),
 						)
 
-	# Search all rows/columns for pairs of cells that are the 2 remaining
-	# cells that can contain 1 specific number
-	def __potentialSwordfish(self, coordIter):
-		potentialSwordfish = numDictList(3)
+	def __validRectangleRowCells(self, cellCount, *dataList):
 
-		# Iterate through each row/cell in the sudoku grid
-		for cellCoordinatesList in coordIter():
-			hintCoords = numDictList(3)
-
-			# Iterate through each cell's coordinates
-			for cellCoords in cellCoordinatesList:
-
-				# Loop through all notes in the current cell
-				noteNums = self.getCellNotes(
-					cellCoords.blockRow,
-					cellCoords.blockCol,
-					cellCoords.row,
-					cellCoords.col,
-				)
-				for num in noteNums:
-					# Store the current coordinates
-					hintCoords[num].append(cellCoords)
-
-			# Keep only the cells that have exactly 2 numbers left in the row/column
-			for num in hintCoords:
-				if len(hintCoords[num]) <= 3:
-					potentialSwordfish[num].append(hintCoords[num])
-
-		return potentialSwordfish
-
-	def __validSwordfishRowCells(self, *dataList):
 		rowData = DictCounter()
 		completeDataLists = True
 
@@ -894,9 +733,10 @@ class Sudoku(object):
 				row = '%s,%s' % (coords.blockRow, coords.row)
 				rowData.add(row)
 
-		return rowData.keyCount() == 3 and rowData.countsGE(2) and completeDataLists
+		return rowData.keyCount() == cellCount and rowData.countsGE(2) and completeDataLists
 
-	def __validSwordfishColCells(self, *dataList):
+	def __validRectangleColCells(self, cellCount, *dataList):
+
 		colData = DictCounter()
 		completeDataLists = True
 
@@ -907,7 +747,7 @@ class Sudoku(object):
 				col = '%s,%s' % (coords.blockCol, coords.col)
 				colData.add(col)
 
-		return colData.keyCount() == 3 and colData.countsGE(2) and completeDataLists
+		return colData.keyCount() == cellCount and colData.countsGE(2) and completeDataLists
 
 	def __rowsInCommon(self, *dataList):
 		rowSet = set()
@@ -926,8 +766,40 @@ class Sudoku(object):
 				colSet.add(SudokuCoordinates(0, coords.blockCol, 0, coords.col))
 
 		return colSet
+
+	# Search all rows/columns for cells that have between 2 and cellCount candidates
+	# cellCount is dependent on the technique.  This method is used in the xwing,
+	# swordfish, jellyfish type puzzles
+	def __potentialRectangleCells(self, cellCount, coordIter):
+
+		potentialCells = numDictList(3)
+
+		# Iterate through each row/cell in the sudoku grid
+		for cellCoordinatesList in coordIter():
+			hintCoords = numDictList(3)
+
+			# Iterate through each cell's coordinates
+			for cellCoords in cellCoordinatesList:
+
+				# Loop through all notes in the current cell
+				noteNums = self.getCellNotes(
+					cellCoords.blockRow,
+					cellCoords.blockCol,
+					cellCoords.row,
+					cellCoords.col,
+				)
+				for num in noteNums:
+					# Store the current coordinates
+					hintCoords[num].append(cellCoords)
+
+			# Keep only the cells that have between 2 and cellCount candidates left in the row/column
+			for num in hintCoords:
+				if 2 <= len(hintCoords[num]) <= cellCount:
+					potentialCells[num].append(hintCoords[num])
+
+		return potentialCells
 	#
-	# __reduceSwordfish methods
+	# __reduceXwingSwordfishJellyfish methods
 	###### END
 
 	###### START
