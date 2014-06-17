@@ -20,6 +20,9 @@ def main():
 	# Prints out final values after solving
 	print sudokuObj
 
+	if params.techniquesUsed:
+		sudokuObj.printTechniquesUsed()
+
 
 ###
 
@@ -27,9 +30,15 @@ def getParams():
 	parser = OptionParser()
 	parser.add_option(
 		"--puzzle",
-		type="string",
-		action="store",
-		help="File with starting puzzle.",
+		type = "string",
+		action = "store",
+		help = "File with starting puzzle.",
+	)
+	parser.add_option(
+		"--techniquesUsed",
+		action = "store_true",
+		default = False,
+		help = "Prints out a list of techniques used.",
 	)
 
 	(options, args) = parser.parse_args()
