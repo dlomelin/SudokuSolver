@@ -1,7 +1,7 @@
-import os, sys
+import os, sys, time
 from itertools import combinations, chain
 
-from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList, pairwiseIter, tripletIter
+from SudokuSolver.modules.utilities import instantiateMatrix, doubleIter, numberSet, numDictList
 from SudokuSolver.modules.SudokuBlock import SudokuBlock
 from SudokuSolver.modules.SudokuCoordinates import SudokuCoordinates
 
@@ -17,6 +17,12 @@ class Sudoku(object):
 
 		# Mark this puzzle as unsolved
 		self.__setSolvedFalse()
+
+		self.__techniquesUsed = {}
+
+	########################
+	# Overloaded Operators #
+	########################
 
 	def __eq__(self, other):
 		return self.gridValues() == other.gridValues()
@@ -78,6 +84,8 @@ class Sudoku(object):
 		# Mark this puzzle as unsolved
 		self.__setSolvedFalse()
 
+		#startTime = time.clock()
+
 		while True:
 			# Mark this iteration as having no changes
 			# Any modifications to the puzzle will mark the puzzle as changed
@@ -116,6 +124,9 @@ class Sudoku(object):
 		# all adhere to a valid sudoku solution.
 		if self.complete():
 			self.__checkValid()
+
+		#totalTime = time.clock() - startTime
+		#print 'Total Time: %s' % (totalTime)
 
 	# Checks if every cell has been filled in with a number.
 	# Does not check if the numbers are valid though.
@@ -164,6 +175,13 @@ class Sudoku(object):
 				else:
 					fhOut.write('%s\n' % (self.__rowSplit()))
 
+	# Prints out a list of techniques used and how frequently they were used
+	def printTechniquesUsed(self, fhOut = sys.stdout):
+		fhOut.write('Candidates Removed By:\n')
+		for technique in sorted(self.__techniquesUsed.keys()):
+			fhOut.write('  %s: %s\n' % (technique, self.__techniquesUsed[technique]))
+		fhOut.write('\n')
+
 	# Returns the value of a cell at the specified coordinates
 	def getCellValue(self, blockRow, blockCol, row, col):
 		return self.__matrix[blockRow][blockCol].getValue(row, col)
@@ -183,8 +201,9 @@ class Sudoku(object):
 		return self.__changeStatus
 
 	# Lets the solver know changes were made
-	def __setChangeTrue(self):
+	def __setChangeTrue(self, techniqueUsed):
 		self.__changeStatus = True
+		self.__trackTechniquesUsed(techniqueUsed)
 
 	def __setChangeFalse(self):
 		self.__changeStatus = False
@@ -194,6 +213,13 @@ class Sudoku(object):
 
 	def __setSolvedFalse(self):
 		self.__solvedStatus = False
+
+	def __trackTechniquesUsed(self, technique):
+		if technique:
+			try:
+				self.__techniquesUsed[technique] += 1
+			except:
+				self.__techniquesUsed[technique] = 1
 	#
 	# instance variable setters and getters
 	###### END
@@ -226,7 +252,7 @@ class Sudoku(object):
 	#
 	# Sets the value of the specified cell and adjusts the notes in the
 	# necessary row, column, and block.
-	def __setValue(self, num, blockRow, blockCol, row, col):
+	def __setValue(self, num, blockRow, blockCol, row, col, techniqueUsed = None):
 		# Sets the value of the specified cell
 		self.__setCellValue(num, blockRow, blockCol, row, col)
 
@@ -237,11 +263,11 @@ class Sudoku(object):
 		self.__removeAffectedNotes(num, blockRow, blockCol, row, col)
 
 		# Let the solver know changes were made
-		self.__setChangeTrue()
+		self.__setChangeTrue(techniqueUsed)
 
 	# Deletes the specified number from the cell's notes.  If there is only
 	# one number left in the notes, then it sets the value
-	def __clearCellNoteNumberAndSet(self, num, blockRow, blockCol, row, col):
+	def __clearCellNoteNumberAndSet(self, num, blockRow, blockCol, row, col, techniqueUsed):
 
 		noteNums = self.getCellNotes(blockRow, blockCol, row, col)
 		if num in noteNums:
@@ -249,10 +275,17 @@ class Sudoku(object):
 
 			nums = list(noteNums)
 			if len(nums) == 1:
-				self.__setValue(nums[0], blockRow, blockCol, row, col)
-
-			# Let the solver know changes were made
-			self.__setChangeTrue()
+				self.__setValue(
+					nums[0],
+					blockRow,
+					blockCol,
+					row,
+					col,
+					techniqueUsed,
+				)
+			else:
+				# Let the solver know changes were made
+				self.__setChangeTrue(techniqueUsed)
 
 	# Iterate through each cell, determine which numbers have already been
 	# assigned, and remove them from the list of unassigned numbers
@@ -306,15 +339,21 @@ class Sudoku(object):
 		)
 
 	# Goes through each cell passed from the iterator and removes the number from the cell's notes
-	def __removeNotesByIter(self, num, coordIter, coordPos1, coordPos2, skipCoordsList):
-
+	def __removeNotesByIter(self, num, coordIter, coordPos1, coordPos2, skipCoordsList, technique = None):
 		# Iterate through each cell
 		for coords in coordIter(coordPos1, coordPos2):
 
 			# Skip the cells that are the skip list
 			if not(self.__coordsInList(coords, skipCoordsList)):
 				# Remove the numbers from the cell notes
-				self.__clearCellNoteNumberAndSet(num, coords.blockRow, coords.blockCol, coords.row, coords.col)
+				self.__clearCellNoteNumberAndSet(
+					num,
+					coords.blockRow,
+					coords.blockCol,
+					coords.row,
+					coords.col,
+					technique,
+				)
 
 	def __coordsInList(self, coords, skipList):
 		itemInList = False
@@ -597,6 +636,7 @@ class Sudoku(object):
 	# Reduce numbers based on lone hint pairs lying along the same row or column within 1 block.
 	# Removes the number along the same row or column but in neighboring blocks.
 	def __reduceCandidateLines(self):
+		technique = 'Candidate Lines'
 
 		# Iterate through all sudoku grid blocks
 		for cellCoordinatesList in self.__blockCoordsIter():
@@ -622,6 +662,7 @@ class Sudoku(object):
 							coords1.blockRow,
 							coords1.row,
 							[coords1, coords2],
+							technique,
 						)
 
 					# Candidate line lies along a column, therefore remove note from the rest of the column
@@ -633,6 +674,7 @@ class Sudoku(object):
 							coords1.blockCol,
 							coords1.col,
 							[coords1, coords2],
+							technique,
 						)
 
 	# Stores the coordinates for all hint positions
@@ -670,7 +712,7 @@ class Sudoku(object):
 			self.__reduceXwingSwordJellyCol(cellCount)
 
 	def __reduceXwingSwordJellyRow(self, cellCount):
-
+		technique = self.__xSwordJellyTechnique(cellCount)
 		potentialCells = self.__potentialRectangleCells(cellCount, self.__rowCoordsIter)
 
 		# Iterate through each number
@@ -693,9 +735,11 @@ class Sudoku(object):
 							blockCoords.blockCol,
 							blockCoords.col,
 							list(chain(*dataset)),
+							technique,
 						)
 
 	def __reduceXwingSwordJellyCol(self, cellCount):
+		technique = self.__xSwordJellyTechnique(cellCount)
 
 		potentialCells = self.__potentialRectangleCells(cellCount, self.__columnCoordsIter)
 
@@ -719,6 +763,7 @@ class Sudoku(object):
 							blockCoords.blockRow,
 							blockCoords.row,
 							list(chain(*dataset)),
+							technique,
 						)
 
 	def __validRectangleRowCells(self, cellCount, *dataList):
@@ -798,6 +843,17 @@ class Sudoku(object):
 					potentialCells[num].append(hintCoords[num])
 
 		return potentialCells
+
+	def __xSwordJellyTechnique(self, cellCount):
+		techniques = {
+			2: 'X-Wing',
+			3: 'Sword-Fish',
+			4: 'Jelly-Fish',
+		}
+		try:
+			return techniques[cellCount]
+		except:
+			raise Exception('Invalid  size used: %s.  Please modify code' % (cellCount))
 	#
 	# __reduceXwingSwordfishJellyfish methods
 	###### END
@@ -845,6 +901,7 @@ class Sudoku(object):
 	# Finds all valid naked sets.  If any are found, remove the numbers that are found in the naked
 	# sets from all remaining neighboring cells.
 	def __findNakedSetCombinations(self, setSize, noteList, noteCoords, cellCoordinatesList):
+		technique = self.__nakedSetTechnique(setSize)
 
 		# Generates a list with all combinations of size setSize.
 		# If noteList = [0, 1, 2] and setSize = 2, then 3 indexLists would be created
@@ -881,6 +938,7 @@ class Sudoku(object):
 								coords.blockCol,
 								coords.row,
 								coords.col,
+								technique,
 							)
 
 	# Generate a set of the unique notes in noteList
@@ -890,6 +948,17 @@ class Sudoku(object):
 			for num in list(setList[indexNum]):
 				uniqueNums.add(num)
 		return uniqueNums
+
+	def __nakedSetTechnique(self, setSize):
+		techniques = {
+			2: 'Naked Pairs',
+			3: 'Naked Trios',
+			4: 'Naked Quads',
+		}
+		try:
+			return techniques[setSize]
+		except:
+			raise Exception('Invalid naked set size used: %s.  Please modify code' % (setSize))
 	#
 	# __reduceNakedSets methods
 	###### END
@@ -909,6 +978,7 @@ class Sudoku(object):
 				self.__findPotentialYwing(cellCoords)
 
 	def __findPotentialYwing(self, coords):
+		technique = 'Y-Wing'
 
 		# Look for a pivot cell that has 2 unknown notes
 		pivotCellNotes = self.getCellNotes(
@@ -943,6 +1013,7 @@ class Sudoku(object):
 								rCoords.blockCol,
 								rCoords.row,
 								rCoords.col,
+								technique,
 							)
 
 	def __validYCell(self, pivotCellNotes, cellNotes):
@@ -966,6 +1037,7 @@ class Sudoku(object):
 				self.__findPotentialXYZwing(cellCoords)
 
 	def __findPotentialXYZwing(self, coords):
+		technique = 'XYZ-Wing'
 
 		# Look for a pivot point that has 3 unknown notes
 		pivotCellNotes = self.getCellNotes(
@@ -1007,6 +1079,7 @@ class Sudoku(object):
 							rCoords.blockCol,
 							rCoords.row,
 							rCoords.col,
+							technique,
 						)
 
 	# Look for cells that have 2 unknown notes that are all found
@@ -1032,6 +1105,7 @@ class Sudoku(object):
 				self.__findPotentialWXYZwing(cellCoords)
 
 	def __findPotentialWXYZwing(self, coords):
+		technique = 'WXYZ-Wing'
 
 		pivotCellNotes = self.getCellNotes(
 			coords.blockRow,
@@ -1077,6 +1151,7 @@ class Sudoku(object):
 							rCoords.blockCol,
 							rCoords.row,
 							rCoords.col,
+							technique,
 						)
 
 	def __findNonRestrictedCandidate(self, notesList, coordsList):
@@ -1110,7 +1185,7 @@ class Sudoku(object):
 	# __reduceMultipleLines methods
 	#
 	def __reduceMultipleLines(self):
-
+		technique = 'Multiple Lines'
 		# Iterate through each block
 		for cellCoordinatesList in self.__blockCoordsIter():
 
@@ -1132,7 +1207,14 @@ class Sudoku(object):
 					# Remove the number from the cell's notes
 					for row in sharedRows:
 						for col in range(3):
-							self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
+							self.__clearCellNoteNumberAndSet(
+								num,
+								blockRow,
+								blockCol,
+								row,
+								col,
+								technique,
+							)
 
 				# Identify the columns in the current block that can have the number eliminated from the notes
 				sharedCols = self.__findSharedLinesByCol(num, blockRow, blockCol)
@@ -1141,7 +1223,14 @@ class Sudoku(object):
 					# Remove the number from the cell's notes
 					for col in sharedCols:
 						for row in range(3):
-							self.__clearCellNoteNumberAndSet(num, blockRow, blockCol, row, col)
+							self.__clearCellNoteNumberAndSet(
+								num,
+								blockRow,
+								blockCol,
+								row,
+								col,
+								technique,
+							)
 
 	# Identify the rows in the current block that can have the number eliminated from the notes
 	def __findSharedLinesByRow(self, num, blockRow, blockCol):
