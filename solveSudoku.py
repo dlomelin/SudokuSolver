@@ -15,7 +15,7 @@ def main():
 	# If the solver was unable to fill in all cells
 	# then print out the final notes
 	if not sudokuObj.complete():
-		sudokuObj.printNotes()
+		sudokuObj.printCandidates()
 
 	# Prints out final values after solving
 	print sudokuObj
