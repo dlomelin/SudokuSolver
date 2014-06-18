@@ -14,10 +14,14 @@ class SudokuBlock(object):
 		self.__validateNumList()
 
 		# Creates new notes for each of the N^2 cells
-		self.__createNoteNumbers()
+		self.__createCandidateNumbers()
 
 		# Remove all notes for cells that have been assigned a number
 		self.__eliminateKnownNumbers()
+
+	# TODO pull out num list
+	#def __repr__(self):
+	#	return '%s(%s)' % (self.__class__.__name__)
 
 	def __eq__(self, other):
 		return self.__values == other.__values
@@ -75,25 +79,25 @@ class SudokuBlock(object):
 		self.__values[row][col] = str(num)
 
 	##
-	# NOTE METHODS BELOW
-	# Notes keep track of all the possible numbers that are valid options
-	# for a given cell.  As cells across the puzzle are resolved, notes
+	# CANDIDATE METHODS BELOW
+	# Candidates keep track of all the possible numbers that are valid options
+	# for a given cell.  As cells across the puzzle are resolved, candidates
 	# are modified to remove numbers that are no longer possible at the
 	# current cell.
-	# Notes are represented by a set() of numbers from 1-N^2
+	# Candidates are represented by a set() of numbers from 1-N^2
 	##
 
 	# Returns the notes for the specified (row, col)
 	def getNoteNumbers(self, row, col):
-		return self.__noteNums[row][col]
+		return self.__candidates[row][col]
 
 	# Deletes a number from a given set of notes at position (row, col)
 	def deleteNoteNumber(self, num, row, col):
-		self.__noteNums[row][col].discard(str(num))
+		self.__candidates[row][col].discard(str(num))
 
 	# Deletes all numbers for a set of notes
 	def clearNoteNumbers(self, row, col):
-		self.__noteNums[row][col] = set()
+		self.__candidates[row][col] = set()
 
 	###################
 	# Private Methods #
@@ -135,13 +139,13 @@ class SudokuBlock(object):
 			raise Exception('Duplicate numbers pre-assigned to SudokuBlock object.')
 
 	# Creates new notes for each of the N^2 cells
-	def __createNoteNumbers(self):
+	def __createCandidateNumbers(self):
 		# Creates a NxN matrix.  Each cell will have its own set of notes
-		self.__noteNums = instantiateMatrix(self.__squareSize)
+		self.__candidates = instantiateMatrix(self.__squareSize)
 
 		# Iterate through each of the N^2 cells and assign a new set of notes
 		for row, col in doubleIter(self.__squareSize):
-			self.__noteNums[row][col] = numberSet(self.__squareSize)
+			self.__candidates[row][col] = numberSet(self.__squareSize)
 
 	# Remove all notes for cells that have been assigned a number
 	def __eliminateKnownNumbers(self):
