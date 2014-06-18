@@ -949,6 +949,7 @@ class Sudoku(object):
 				uniqueNums.add(num)
 		return uniqueNums
 
+	# Returns the technique name for a given setSize
 	def __nakedSetTechnique(self, setSize):
 		techniques = {
 			2: 'Naked Pairs',
@@ -977,6 +978,7 @@ class Sudoku(object):
 				# Perform Y wing technique
 				self.__findPotentialYwing(cellCoords)
 
+	# Performs the Y wing technique
 	def __findPotentialYwing(self, coords):
 		technique = 'Y-Wing'
 
@@ -997,6 +999,10 @@ class Sudoku(object):
 			# Iterate through all pairs of cells
 			for indexList in combinations(range(len(coordsList)), 2):
 
+				# Create a set of common of candidate numbers from the pair of cells.
+				# If there is only 1 candidate number and its not found in the pivot cell
+				# then remove that number from the overlapping cells that can see one
+				# another between the current pairs of cells.
 				commonSet = notesList[indexList[0]].intersection(notesList[indexList[1]])
 				if len(commonSet) == 1:
 					removeNum = commonSet.pop()
@@ -1016,6 +1022,7 @@ class Sudoku(object):
 								technique,
 							)
 
+	# Looks for a cell that has 2 candidate numbers and shares exactly 1 candidate between itself and the pivot cell
 	def __validYCell(self, pivotCellNotes, cellNotes):
 		return len(cellNotes) == 2 and len(cellNotes.intersection(pivotCellNotes)) == 1
 	#
