@@ -7,7 +7,6 @@
 
 - Consolidate XYZwing technique with other methods
 	- Use intersection and seen by methods across module?
-	- Refactor __reduceNakedSets to use intersection module
 	- Use WXYZwing technique to replace XYZ?
 
 - Add comments to WXYZwing technique
@@ -16,8 +15,7 @@
 - Add more techniques
 	- X-Cycles
 
-- Track statistics of which techniques were used to solve a puzzle
-	- Evaluate the puzzle based on all the techniques required to solve it
+- Evaluate the puzzle based on all the techniques required to solve it
 
 - Check invalid starting values (XwingCol2 bottom 3 rows shifted 1 right)
 - Generalize to any size grid.  Currently hardcoded to 3
