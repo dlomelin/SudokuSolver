@@ -142,11 +142,11 @@ class Sudoku(object):
 
 		return allComplete
 
-	# Prints the current notes used to solve the puzzle in a human readable format
-	def printNotes(self, fhOut = sys.stdout):
+	# Prints the current candidates used to solve the puzzle in a human readable format
+	def printCandidates(self, fhOut = sys.stdout):
 		noteSets = [['1','2','3'], ['4','5','6'], ['7','8','9']]
 
-		header = 'Current Notes'.center(len(self.__blockRowSplit()))
+		header = 'Current Candidates'.center(len(self.__blockRowSplit()))
 
 		fhOut.write('%s\n' % (header))
 		for blockRow in range(3):
@@ -158,7 +158,7 @@ class Sudoku(object):
 					for blockCol in range(3):
 						for col in range(3):
 							numString = ''
-							noteNums = self.getCellNotes(blockRow, blockCol, row, col)
+							noteNums = self.getCellCandidates(blockRow, blockCol, row, col)
 							for num in noteSets[i]:
 								if num in noteNums:
 									numString += '%s' % (num)
@@ -187,7 +187,7 @@ class Sudoku(object):
 		return self.__matrix[blockRow][blockCol].getValue(row, col)
 
 	# Returns the set() of notes at the specified coordinates
-	def getCellNotes(self, blockRow, blockCol, row, col):
+	def getCellCandidates(self, blockRow, blockCol, row, col):
 		return self.__matrix[blockRow][blockCol].getNoteNumbers(row, col)
 
 	###################
@@ -234,7 +234,7 @@ class Sudoku(object):
 	def __setCellValue(self, num, blockRow, blockCol, row, col):
 		self.__matrix[blockRow][blockCol].setValue(num, row, col)
 
-	# Clears out available notes from the specified cell
+	# Clears out available candidates from the specified cell
 	def __clearCellNoteNumbers(self, blockRow, blockCol, row, col):
 		self.__matrix[blockRow][blockCol].clearNoteNumbers(row, col)
 
@@ -250,26 +250,26 @@ class Sudoku(object):
 	###### START
 	# Shared methods
 	#
-	# Sets the value of the specified cell and adjusts the notes in the
+	# Sets the value of the specified cell and adjusts the candidates in the
 	# necessary row, column, and block.
 	def __setValue(self, num, blockRow, blockCol, row, col, techniqueUsed = None):
 		# Sets the value of the specified cell
 		self.__setCellValue(num, blockRow, blockCol, row, col)
 
-		# Clears out available notes from the specified cell
+		# Clears out available candidates from the specified cell
 		self.__clearCellNoteNumbers(blockRow, blockCol, row, col)
 
-		# Clears out available notes from the affected block, row, and column
+		# Clears out available candidates from the affected block, row, and column
 		self.__removeAffectedNotes(num, blockRow, blockCol, row, col)
 
 		# Let the solver know changes were made
 		self.__setChangeTrue(techniqueUsed)
 
-	# Deletes the specified number from the cell's notes.  If there is only
-	# one number left in the notes, then it sets the value
+	# Deletes the specified number from the cell's candidates.  If there is only
+	# one number left in the candidates, then it sets the value
 	def __clearCellNoteNumberAndSet(self, num, blockRow, blockCol, row, col, techniqueUsed):
 
-		noteNums = self.getCellNotes(blockRow, blockCol, row, col)
+		noteNums = self.getCellCandidates(blockRow, blockCol, row, col)
 		if num in noteNums:
 			self.__deleteCellNoteNumber(num, blockRow, blockCol, row, col)
 
@@ -308,10 +308,10 @@ class Sudoku(object):
 
 		return unassignedNums
 
-	# Clears out available notes from the affected block, row, and column
+	# Clears out available candidates from the affected block, row, and column
 	def __removeAffectedNotes(self, num, blockRow, blockCol, row, col):
 
-		# Remove the number from the notes along the block
+		# Remove the number from the candidates along the block
 		self.__removeNotesByIter(
 			num,
 			self.__blockCellCoordsIter,
@@ -320,7 +320,7 @@ class Sudoku(object):
 			[],
 		)
 
-		# Remove the number from the notes along the row
+		# Remove the number from the candidates along the row
 		self.__removeNotesByIter(
 			num,
 			self.__rowCellCoordsIter,
@@ -329,7 +329,7 @@ class Sudoku(object):
 			[],
 		)
 
-		# Remove the number from the notes along the column
+		# Remove the number from the candidates along the column
 		self.__removeNotesByIter(
 			num,
 			self.__colCellCoordsIter,
@@ -338,14 +338,14 @@ class Sudoku(object):
 			[],
 		)
 
-	# Goes through each cell passed from the iterator and removes the number from the cell's notes
+	# Goes through each cell passed from the iterator and removes the number from the cell's candidates
 	def __removeNotesByIter(self, num, coordIter, coordPos1, coordPos2, skipCoordsList, technique = None):
 		# Iterate through each cell
 		for coords in coordIter(coordPos1, coordPos2):
 
 			# Skip the cells that are the skip list
 			if not(self.__coordsInList(coords, skipCoordsList)):
-				# Remove the numbers from the cell notes
+				# Remove the numbers from the cell candidates
 				self.__clearCellNoteNumberAndSet(
 					num,
 					coords.blockRow,
@@ -398,13 +398,13 @@ class Sudoku(object):
 
 	def __validCellsSeenBy(self, coords, pivotCellNotes, validCellFunction):
 		coordsList = []
-		notesList = []
+		candidatesList = []
 
 		# Iterate across all cells that are seen by the current cell
 		for cellCoords in self.__coordsSeenBy(coords):
 
 			# Look for cells that pass the criteria set forth by validCellFunction
-			cellNotes = self.getCellNotes(
+			cellNotes = self.getCellCandidates(
 				cellCoords.blockRow,
 				cellCoords.blockCol,
 				cellCoords.row,
@@ -412,23 +412,23 @@ class Sudoku(object):
 			)
 			if validCellFunction(pivotCellNotes, cellNotes):
 				coordsList.append(cellCoords)
-				notesList.append(cellNotes)
+				candidatesList.append(cellNotes)
 
-		return coordsList, notesList
+		return coordsList, candidatesList
 
-	def __notesIntersection(self, *notesList):
-		notesIntersection = notesList[0]
-		for i in range(1, len(notesList)):
-			notesIntersection = notesIntersection.intersection(notesList[i])
+	def __candidatesIntersection(self, *candidatesList):
+		candidatesIntersection = candidatesList[0]
+		for i in range(1, len(candidatesList)):
+			candidatesIntersection = candidatesIntersection.intersection(candidatesList[i])
 
-		return notesIntersection
+		return candidatesIntersection
 
-	def __notesUnion(self, *notesList):
-		notesUnion = notesList[0]
-		for i in range(1, len(notesList)):
-			notesUnion = notesUnion.union(notesList[i])
+	def __candidatesUnion(self, *candidatesList):
+		candidatesUnion = candidatesList[0]
+		for i in range(1, len(candidatesList)):
+			candidatesUnion = candidatesUnion.union(candidatesList[i])
 
-		return notesUnion
+		return candidatesUnion
 	#
 	# Shared methods
 	###### END
@@ -520,10 +520,10 @@ class Sudoku(object):
 		for blockRow, blockCol in doubleIter(3):
 			self.__matrix[blockRow][blockCol] = SudokuBlock(tempMatrix[blockRow][blockCol])
 
-		# Adjusts the notes based on the initial values of the sudoku grid.
+		# Adjusts the candidates based on the initial values of the sudoku grid.
 		self.__clearInitialNotes()
 
-	# Adjusts the notes based on the initial values of the sudoku grid.
+	# Adjusts the candidates based on the initial values of the sudoku grid.
 	def __clearInitialNotes(self):
 
 		# Iterate through each block in the sudoku grid
@@ -532,7 +532,7 @@ class Sudoku(object):
 			# Iterate through each cell's coordinates
 			for cellCoords in cellCoordinatesList:
 
-				# If the cell has a number assigned, then clear the block, row, and column notes
+				# If the cell has a number assigned, then clear the block, row, and column candidates
 				num = self.getCellValue(
 					cellCoords.blockRow,
 					cellCoords.blockCol,
@@ -540,7 +540,7 @@ class Sudoku(object):
 					cellCoords.col,
 				)
 				if num:
-					# Clears out available notes from the affected block, row, and column
+					# Clears out available candidates from the affected block, row, and column
 					self.__removeAffectedNotes(
 						num,
 						cellCoords.blockRow,
@@ -562,7 +562,7 @@ class Sudoku(object):
 	###### END
 
 	###### START
-	# printNotes methods
+	# printCandidates methods
 	#
 	def __rowSplit(self):
 		return '-----------------------------------------------------------'
@@ -570,7 +570,7 @@ class Sudoku(object):
 	def __blockRowSplit(self):
 		return '==========================================================='
 	#
-	# printNotes methods
+	# printCandidates methods
 	###### END
 
 	###### START
@@ -606,7 +606,7 @@ class Sudoku(object):
 					# If that position was already assigned a number then skip it
 					if not self.getCellValue(cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col):
 						# Grab the set() of available values for the current cell
-						noteNums = self.getCellNotes(cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col)
+						noteNums = self.getCellCandidates(cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col)
 						# Keep track of how many positions will allow the current value
 						if currentValue in noteNums:
 							availableCellCount += 1
@@ -653,9 +653,9 @@ class Sudoku(object):
 					coords1 = hintCoords[num][0]
 					coords2 = hintCoords[num][1]
 
-					# Candidate line lies along a row, therefore remove note from the rest of the row
+					# Candidate line lies along a row, therefore remove number from the rest of the row
 					if coords1.alignsByRow(coords2):
-						# Remove the number from the notes along the row
+						# Remove the number from the candidates along the row
 						self.__removeNotesByIter(
 							num,
 							self.__rowCellCoordsIter,
@@ -665,9 +665,9 @@ class Sudoku(object):
 							technique,
 						)
 
-					# Candidate line lies along a column, therefore remove note from the rest of the column
+					# Candidate line lies along a column, therefore remove number from the rest of the column
 					elif coords1.alignsByCol(coords2):
-						# Remove the number from the notes along the column
+						# Remove the number from the candidates along the column
 						self.__removeNotesByIter(
 							num,
 							self.__colCellCoordsIter,
@@ -684,7 +684,7 @@ class Sudoku(object):
 		# Iterate through each cell's coordinates
 		for cellCoords in cellCoordinatesList:
 			# Store the coordinates where all numbers are found
-			noteNums = self.getCellNotes(
+			noteNums = self.getCellCandidates(
 				cellCoords.blockRow,
 				cellCoords.blockCol,
 				cellCoords.row,
@@ -705,10 +705,10 @@ class Sudoku(object):
 
 		# 2 = Xwing  3 = Swordfish  4 = Jellyfish
 		for cellCount in range(2, 5):
-			# Search for valid xwing cells along rows to reduce notes along the columns
+			# Search for valid xwing cells along rows to reduce candidates along the columns
 			self.__reduceXwingSwordJellyRow(cellCount)
 
-			# Search for valid xwing cells along columns to reduce notes along the rows
+			# Search for valid xwing cells along columns to reduce candidates along the rows
 			self.__reduceXwingSwordJellyCol(cellCount)
 
 	def __reduceXwingSwordJellyRow(self, cellCount):
@@ -727,7 +727,7 @@ class Sudoku(object):
 					# Iterate through the 3 affected columns
 					for blockCoords in self.__columnsInCommon(*dataset):
 
-						# Remove the number from the notes along the column, excluding the cells
+						# Remove the number from the candidates along the column, excluding the cells
 						# that make up the Swordfish
 						self.__removeNotesByIter(
 							num,
@@ -755,7 +755,7 @@ class Sudoku(object):
 					# Iterate through the 3 affected rows
 					for blockCoords in self.__rowsInCommon(*dataset):
 
-						# Remove the number from the notes along the row, excluding the cells
+						# Remove the number from the candidates along the row, excluding the cells
 						# that make up the Swordfish
 						self.__removeNotesByIter(
 							num,
@@ -826,8 +826,8 @@ class Sudoku(object):
 			# Iterate through each cell's coordinates
 			for cellCoords in cellCoordinatesList:
 
-				# Loop through all notes in the current cell
-				noteNums = self.getCellNotes(
+				# Loop through all candidates in the current cell
+				noteNums = self.getCellCandidates(
 					cellCoords.blockRow,
 					cellCoords.blockCol,
 					cellCoords.row,
@@ -882,7 +882,7 @@ class Sudoku(object):
 			for cellCoords in cellCoordinatesList:
 
 				# Store the cell's coordinates and notes
-				noteNums = self.getCellNotes(
+				noteNums = self.getCellCandidates(
 					cellCoords.blockRow,
 					cellCoords.blockCol,
 					cellCoords.row,
@@ -983,7 +983,7 @@ class Sudoku(object):
 		technique = 'Y-Wing'
 
 		# Look for a pivot cell that has 2 unknown notes
-		pivotCellNotes = self.getCellNotes(
+		pivotCellNotes = self.getCellCandidates(
 			coords.blockRow,
 			coords.blockCol,
 			coords.row,
@@ -994,7 +994,7 @@ class Sudoku(object):
 		if len(pivotCellNotes) == 2:
 
 			# Get a list of coordinates and notes seen by the current cell
-			coordsList, notesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validYCell)
+			coordsList, candidatesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validYCell)
 
 			# Iterate through all pairs of cells
 			for indexList in combinations(range(len(coordsList)), 2):
@@ -1003,7 +1003,7 @@ class Sudoku(object):
 				# If there is only 1 candidate number and its not found in the pivot cell
 				# then remove that number from the overlapping cells that can see one
 				# another between the current pairs of cells.
-				commonSet = notesList[indexList[0]].intersection(notesList[indexList[1]])
+				commonSet = candidatesList[indexList[0]].intersection(candidatesList[indexList[1]])
 				if len(commonSet) == 1:
 					removeNum = commonSet.pop()
 					if not removeNum in pivotCellNotes:
@@ -1047,7 +1047,7 @@ class Sudoku(object):
 		technique = 'XYZ-Wing'
 
 		# Look for a pivot point that has 3 unknown notes
-		pivotCellNotes = self.getCellNotes(
+		pivotCellNotes = self.getCellCandidates(
 			coords.blockRow,
 			coords.blockCol,
 			coords.row,
@@ -1058,19 +1058,19 @@ class Sudoku(object):
 		if len(pivotCellNotes) == 3:
 
 			# Get a list of coordinates and notes seen by the current cell
-			coordsList, notesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validXYZCell)
+			coordsList, candidatesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validXYZCell)
 
 			# Iterate through all pairs of cells
 			for indexList in combinations(range(len(coordsList)), 2):
 
 				# Union between each pair
-				notesUnion = self.__notesUnion(
-					notesList[indexList[0]],
-					notesList[indexList[1]],
+				candidatesUnion = self.__candidatesUnion(
+					candidatesList[indexList[0]],
+					candidatesList[indexList[1]],
 				)
 
-				if len(notesUnion) == 3:
-					commonSet = self.__notesIntersection(notesList[indexList[0]], notesList[indexList[1]])
+				if len(candidatesUnion) == 3:
+					commonSet = self.__candidatesIntersection(candidatesList[indexList[0]], candidatesList[indexList[1]])
 					removeNum = commonSet.pop()
 
 					removeCoords = self.__coordsIntersection(
@@ -1114,7 +1114,7 @@ class Sudoku(object):
 	def __findPotentialWXYZwing(self, coords):
 		technique = 'WXYZ-Wing'
 
-		pivotCellNotes = self.getCellNotes(
+		pivotCellNotes = self.getCellCandidates(
 			coords.blockRow,
 			coords.blockCol,
 			coords.row,
@@ -1122,21 +1122,21 @@ class Sudoku(object):
 		)
 
 		# Get a list of coordinates and notes seen by the current cell
-		coordsList, notesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validWXYZCell)
+		coordsList, candidatesList = self.__validCellsSeenBy(coords, pivotCellNotes, self.__validWXYZCell)
 
 		# Iterate through all pairs of cells
 		for indexList in combinations(range(len(coordsList)), 3):
 
-			notesUnion = self.__notesUnion(
+			candidatesUnion = self.__candidatesUnion(
 				pivotCellNotes,
-				notesList[indexList[0]],
-				notesList[indexList[1]],
-				notesList[indexList[2]],
+				candidatesList[indexList[0]],
+				candidatesList[indexList[1]],
+				candidatesList[indexList[2]],
 			)
 
-			if len(notesUnion) == 4:
+			if len(candidatesUnion) == 4:
 				removeNum = self.__findNonRestrictedCandidate(
-					[notesList[indexList[0]], notesList[indexList[1]], notesList[indexList[2]]],
+					[candidatesList[indexList[0]], candidatesList[indexList[1]], candidatesList[indexList[2]]],
 					[coordsList[indexList[0]], coordsList[indexList[1]], coordsList[indexList[2]]],
 				)
 
@@ -1146,7 +1146,7 @@ class Sudoku(object):
 					if removeNum in pivotCellNotes:
 						coordsForIntersection.append(coords)
 					for i in range(3):
-						if removeNum in notesList[indexList[i]]:
+						if removeNum in candidatesList[indexList[i]]:
 							coordsForIntersection.append(coordsList[indexList[i]])
 
 					removeCoords = self.__coordsIntersection(*coordsForIntersection)
@@ -1161,7 +1161,7 @@ class Sudoku(object):
 							technique,
 						)
 
-	def __findNonRestrictedCandidate(self, notesList, coordsList):
+	def __findNonRestrictedCandidate(self, candidatesList, coordsList):
 		candidateSet = set()
 
 		# Iterate through each pair of cells
@@ -1173,7 +1173,7 @@ class Sudoku(object):
 				not coordsList[indexList[0]].alignsByBlock(coordsList[indexList[1]]):
 
 				# Look for the numbers shared in common between both cells
-				intersectionSet = notesList[indexList[0]].intersection(notesList[indexList[1]])
+				intersectionSet = candidatesList[indexList[0]].intersection(candidatesList[indexList[1]])
 				candidateSet = candidateSet.union(intersectionSet)
 
 		if len(candidateSet) == 1:
@@ -1181,7 +1181,7 @@ class Sudoku(object):
 		else:
 			return None
 
-	# Look for cells that have cell notes and at least 1 number in common
+	# Look for cells that have candidates and at least 1 number in common
 	def __validWXYZCell(self, pivotCellNotes, cellNotes):
 		return len(cellNotes) >= 2 and len(cellNotes.intersection(pivotCellNotes)) >= 1
 	#
@@ -1207,11 +1207,11 @@ class Sudoku(object):
 			# Look for rows/columns that share the unassigned number in pairs of rows
 			for num in unassignedNums:
 
-				# Identify the rows in the current block that can have the number eliminated from the notes
+				# Identify the rows in the current block that can have the number eliminated from the candidates
 				sharedRows = self.__findSharedLinesByRow(num, blockRow, blockCol)
 				if sharedRows:
 
-					# Remove the number from the cell's notes
+					# Remove the number from the cell's candidates
 					for row in sharedRows:
 						for col in range(3):
 							self.__clearCellNoteNumberAndSet(
@@ -1223,11 +1223,11 @@ class Sudoku(object):
 								technique,
 							)
 
-				# Identify the columns in the current block that can have the number eliminated from the notes
+				# Identify the columns in the current block that can have the number eliminated from the candidates
 				sharedCols = self.__findSharedLinesByCol(num, blockRow, blockCol)
 				if sharedCols:
 
-					# Remove the number from the cell's notes
+					# Remove the number from the cell's candidates
 					for col in sharedCols:
 						for row in range(3):
 							self.__clearCellNoteNumberAndSet(
@@ -1239,7 +1239,7 @@ class Sudoku(object):
 								technique,
 							)
 
-	# Identify the rows in the current block that can have the number eliminated from the notes
+	# Identify the rows in the current block that can have the number eliminated from the candidates
 	def __findSharedLinesByRow(self, num, blockRow, blockCol):
 		sharedRows = set()
 		affectedBlocks = set()
@@ -1250,8 +1250,8 @@ class Sudoku(object):
 			# Iterate through each cell in the block
 			for row, col in doubleIter(3):
 
-				# Check the cell's notes if num can be placed here.  If it can, track the row and block
-				noteNums = self.getCellNotes(blockRow, blockColLoop, row, col)
+				# Check the cell's candidates if num can be placed here.  If it can, track the row and block
+				noteNums = self.getCellCandidates(blockRow, blockColLoop, row, col)
 				if num in noteNums:
 					sharedRows.add(row)
 					affectedBlocks.add(blockColLoop)
@@ -1263,7 +1263,7 @@ class Sudoku(object):
 		else:
 			return set()
 
-	# Identify the columns in the current block that can have the number eliminated from the notes
+	# Identify the columns in the current block that can have the number eliminated from the candidates
 	def __findSharedLinesByCol(self, num, blockRow, blockCol):
 		sharedCols = set()
 		affectedBlocks = set()
@@ -1274,8 +1274,8 @@ class Sudoku(object):
 			# Iterate through each cell in the block
 			for row, col in doubleIter(3):
 
-				# Check the cell's notes if num can be placed here.  If it can, track the column and block
-				noteNums = self.getCellNotes(blockRowLoop, blockCol, row, col)
+				# Check the cell's candidates if num can be placed here.  If it can, track the column and block
+				noteNums = self.getCellCandidates(blockRowLoop, blockCol, row, col)
 				if num in noteNums:
 					sharedCols.add(col)
 					affectedBlocks.add(blockRowLoop)
