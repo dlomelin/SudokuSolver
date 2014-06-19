@@ -71,22 +71,22 @@ class TestSudokuBlock(unittest.TestCase):
 		sudokuBlockObj2 = SudokuBlock(numListStart2)
 		self.assertNotEqual(self.sudokuBlockObj, sudokuBlockObj2)
 
-	# Standard getNoteNumbers() test
+	# Standard getCandidates() test
 	def test_getNoteNumbers(self):
-		notes = self.sudokuBlockObj.getNoteNumbers(0, 2)
+		notes = self.sudokuBlockObj.getCandidates(0, 2)
 		self.assertEqual(notes, set(['1', '2', '3', '4', '5', '6', '7', '8', '9']))
 
-	# Standard getNoteNumbers() test after clearNoteNumbers()
-	def test_clearNoteNumbers(self):
-		self.sudokuBlockObj.clearNoteNumbers(0, 2)
-		notes = self.sudokuBlockObj.getNoteNumbers(0, 2)
+	# Standard getCandidates() test after clearCandidates()
+	def test_clearCandidates(self):
+		self.sudokuBlockObj.clearCandidates(0, 2)
+		notes = self.sudokuBlockObj.getCandidates(0, 2)
 		self.assertEqual(notes, set())
 
-	# Standard getNoteNumbers() test after several deleteNoteNumber()
-	def test_deleteNoteNumber(self):
+	# Standard getCandidates() test after several deleteCandidateNumber()
+	def test_deleteCandidateNumber(self):
 		for num in [1, 3, 5]:
-			self.sudokuBlockObj.deleteNoteNumber(num, 0, 2)
-		notes = self.sudokuBlockObj.getNoteNumbers(0, 2)
+			self.sudokuBlockObj.deleteCandidateNumber(num, 0, 2)
+		notes = self.sudokuBlockObj.getCandidates(0, 2)
 		self.assertEqual(notes, set(['2', '4', '6', '7', '8', '9']))
 
 if __name__ == '__main__':

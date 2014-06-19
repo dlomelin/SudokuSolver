@@ -13,10 +13,10 @@ class SudokuBlock(object):
 		# Make sure the values passed in are in a valid format
 		self.__validateNumList()
 
-		# Creates new notes for each of the N^2 cells
+		# Creates new candidates for each of the N^2 cells
 		self.__createCandidateNumbers()
 
-		# Remove all notes for cells that have been assigned a number
+		# Remove all candidates for cells that have been assigned a number
 		self.__eliminateKnownNumbers()
 
 	# TODO pull out num list
@@ -88,15 +88,15 @@ class SudokuBlock(object):
 	##
 
 	# Returns the notes for the specified (row, col)
-	def getNoteNumbers(self, row, col):
+	def getCandidates(self, row, col):
 		return self.__candidates[row][col]
 
 	# Deletes a number from a given set of notes at position (row, col)
-	def deleteNoteNumber(self, num, row, col):
+	def deleteCandidateNumber(self, num, row, col):
 		self.__candidates[row][col].discard(str(num))
 
 	# Deletes all numbers for a set of notes
-	def clearNoteNumbers(self, row, col):
+	def clearCandidates(self, row, col):
 		self.__candidates[row][col] = set()
 
 	###################
@@ -153,7 +153,7 @@ class SudokuBlock(object):
 		for row, col in doubleIter(self.__squareSize):
 			# Remove all notes for the cell if it has been assigned a number
 			if self.getValue(row, col):
-				self.clearNoteNumbers(row, col)
+				self.clearCandidates(row, col)
 	#
 	# __init__ methods
 	###### END
