@@ -3,8 +3,6 @@
 	- Add wxyz puzzles
 	- Add swordfish puzzles
 
-- Rename notes -> candidates for method names/comments
-
 - Consolidate XYZwing technique with other methods
 	- Use intersection and seen by methods across module?
 	- Use WXYZwing technique to replace XYZ?
