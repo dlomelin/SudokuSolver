@@ -7,7 +7,11 @@ def main():
 	sudokuObj = Sudoku(file=params.puzzle)
 
 	# Prints starting values
-	print sudokuObj
+	if not params.gridValues:
+		print sudokuObj
+	else:
+		print 'Starting'
+		printGridValues(sudokuObj.gridValues())
 
 	# Solve the puzzle
 	sudokuObj.solve()
@@ -18,13 +22,23 @@ def main():
 		sudokuObj.printCandidates()
 
 	# Prints out final values after solving
-	print sudokuObj
+	if not params.gridValues:
+		print sudokuObj
+	else:
+		print 'Ending'
+		printGridValues(sudokuObj.gridValues())
 
 	if params.techniquesUsed:
 		sudokuObj.printTechniquesUsed()
 
 
 ###
+
+def printGridValues(gridList):
+	print '['
+	for i in range(len(gridList)):
+		print '%s,' % (str(gridList[i]).replace('.', ' '))
+	print ']'
 
 def getParams():
 	parser = OptionParser()
@@ -39,6 +53,12 @@ def getParams():
 		action = "store_true",
 		default = False,
 		help = "Prints out a list of techniques used.",
+	)
+	parser.add_option(
+		"--gridValues",
+		action = "store_true",
+		default = False,
+		help = "Prints out a list of grid values in list form instead of formatted.",
 	)
 
 	(options, args) = parser.parse_args()
