@@ -108,8 +108,8 @@ class SudokuBlock(object):
 	#
 	def __storeValues(self, numList):
 		self.__values = numList
-		for i in range(len(self.__values)):
-			for j in range(len(self.__values[i])):
+		for i in xrange(len(self.__values)):
+			for j in xrange(len(self.__values[i])):
 				self.__values[i][j] = str(self.__values[i][j])
 
 	# Stores information related to the size of the input data

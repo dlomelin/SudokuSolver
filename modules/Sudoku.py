@@ -41,13 +41,13 @@ class Sudoku(object):
 		status = status.center(len(rowDelimeter))
 
 		string = '%s\n' % (status)
-		for row in range(len(values)):
+		for row in xrange(len(values)):
 			# Every 3rd block gets a delimeter
 			if row % 3 == 0:
 				string += '%s\n' % (rowDelimeter)
 
 			# Iterate through each number
-			for col in range(len(values[row])):
+			for col in xrange(len(values[row])):
 				# Every 3rd number gets a column delimeter
 				if col % 3 == 0:
 					string += '| '
@@ -149,14 +149,14 @@ class Sudoku(object):
 		header = 'Current Candidates'.center(len(self.__blockRowSplit()))
 
 		fhOut.write('%s\n' % (header))
-		for blockRow in range(3):
+		for blockRow in xrange(3):
 			if blockRow == 0:
 				fhOut.write('%s\n' % (self.__blockRowSplit()))
-			for row in range(3):
-				for i in range(len(candidateNums)):
+			for row in xrange(3):
+				for i in xrange(len(candidateNums)):
 					fhOut.write('||')
-					for blockCol in range(3):
-						for col in range(3):
+					for blockCol in xrange(3):
+						for col in xrange(3):
 							numString = ''
 							candidates = self.getCellCandidates(blockRow, blockCol, row, col)
 							for num in candidateNums[i]:
@@ -370,7 +370,7 @@ class Sudoku(object):
 			seenCoordsList.append(sharedCoords)
 
 		intersectingCoords = seenCoordsList[0]
-		for i in range(1, len(seenCoordsList)):
+		for i in xrange(1, len(seenCoordsList)):
 			intersectingCoords = intersectingCoords.intersection(seenCoordsList[i])
 
 		return intersectingCoords
@@ -418,14 +418,14 @@ class Sudoku(object):
 
 	def __candidatesIntersection(self, *candidatesList):
 		candidatesIntersection = candidatesList[0]
-		for i in range(1, len(candidatesList)):
+		for i in xrange(1, len(candidatesList)):
 			candidatesIntersection = candidatesIntersection.intersection(candidatesList[i])
 
 		return candidatesIntersection
 
 	def __candidatesUnion(self, *candidatesList):
 		candidatesUnion = candidatesList[0]
-		for i in range(1, len(candidatesList)):
+		for i in xrange(1, len(candidatesList)):
 			candidatesUnion = candidatesUnion.union(candidatesList[i])
 
 		return candidatesUnion
@@ -704,7 +704,7 @@ class Sudoku(object):
 	def __reduceXwingSwordfishJellyfish(self):
 
 		# 2 = Xwing  3 = Swordfish  4 = Jellyfish
-		for cellCount in range(2, 5):
+		for cellCount in xrange(2, 5):
 			# Search for valid xwing cells along rows to reduce candidates along the columns
 			self.__reduceXwingSwordJellyRow(cellCount)
 
@@ -893,7 +893,7 @@ class Sudoku(object):
 					candidateList.append(candidates)
 
 			# setSize determines the naked set size, 2 = naked pairs, 3 = naked trios, 4 = naked quads
-			for setSize in range(2, 5):
+			for setSize in xrange(2, 5):
 
 				# Looks for naked sets in the current set of cells
 				self.__findNakedSetCombinations(setSize, candidateList, candidateCoords, cellCoordinatesList)
@@ -906,7 +906,7 @@ class Sudoku(object):
 		# Generates a list with all combinations of size setSize.
 		# If candidateList = [0, 1, 2] and setSize = 2, then 3 indexLists would be created
 		# [0, 1], [0, 2], [1, 2]
-		for indexList in combinations(range(len(candidateList)), setSize):
+		for indexList in combinations(xrange(len(candidateList)), setSize):
 
 			# Generate a set of the unique candidates in candidateList
 			uniqueCandidates = self.__combineCandidates(candidateList, indexList)
@@ -997,7 +997,7 @@ class Sudoku(object):
 			coordsList, candidatesList = self.__validCellsSeenBy(coords, pivotCellCandidates, self.__validYCell)
 
 			# Iterate through all pairs of cells
-			for indexList in combinations(range(len(coordsList)), 2):
+			for indexList in combinations(xrange(len(coordsList)), 2):
 
 				# Create a set of common of candidate numbers from the pair of cells.
 				# If there is only 1 candidate number and its not found in the pivot cell
@@ -1061,7 +1061,7 @@ class Sudoku(object):
 			coordsList, candidatesList = self.__validCellsSeenBy(coords, pivotCellCandidates, self.__validXYZCell)
 
 			# Iterate through all pairs of cells
-			for indexList in combinations(range(len(coordsList)), 2):
+			for indexList in combinations(xrange(len(coordsList)), 2):
 
 				# Union between each pair
 				candidatesUnion = self.__candidatesUnion(
@@ -1125,7 +1125,7 @@ class Sudoku(object):
 		coordsList, candidatesList = self.__validCellsSeenBy(coords, pivotCellCandidates, self.__validWXYZCell)
 
 		# Iterate through all pairs of cells
-		for indexList in combinations(range(len(coordsList)), 3):
+		for indexList in combinations(xrange(len(coordsList)), 3):
 
 			candidatesUnion = self.__candidatesUnion(
 				pivotCellCandidates,
@@ -1145,7 +1145,7 @@ class Sudoku(object):
 					coordsForIntersection = []
 					if removeNum in pivotCellCandidates:
 						coordsForIntersection.append(coords)
-					for i in range(3):
+					for i in xrange(3):
 						if removeNum in candidatesList[indexList[i]]:
 							coordsForIntersection.append(coordsList[indexList[i]])
 
@@ -1165,7 +1165,7 @@ class Sudoku(object):
 		candidateSet = set()
 
 		# Iterate through each pair of cells
-		for indexList in combinations(range(len(coordsList)), 2):
+		for indexList in combinations(xrange(len(coordsList)), 2):
 
 			# Look for cells that can't see each other
 			if not coordsList[indexList[0]].alignsByRow(coordsList[indexList[1]]) and \
@@ -1213,7 +1213,7 @@ class Sudoku(object):
 
 					# Remove the number from the cell's candidates
 					for row in sharedRows:
-						for col in range(3):
+						for col in xrange(3):
 							self.__clearCellCandidateAndSet(
 								num,
 								blockRow,
@@ -1229,7 +1229,7 @@ class Sudoku(object):
 
 					# Remove the number from the cell's candidates
 					for col in sharedCols:
-						for row in range(3):
+						for row in xrange(3):
 							self.__clearCellCandidateAndSet(
 								num,
 								blockRow,
@@ -1245,7 +1245,7 @@ class Sudoku(object):
 		affectedBlocks = set()
 
 		# Iterate through the remaining columns except for the starting one
-		for blockColLoop in filter(lambda x: x != blockCol, range(3)):
+		for blockColLoop in filter(lambda x: x != blockCol, xrange(3)):
 
 			# Iterate through each cell in the block
 			for row, col in doubleIter(3):
@@ -1269,7 +1269,7 @@ class Sudoku(object):
 		affectedBlocks = set()
 
 		# Iterate through the remaining rows except for the starting one
-		for blockRowLoop in filter(lambda x: x != blockRow, range(3)):
+		for blockRowLoop in filter(lambda x: x != blockRow, xrange(3)):
 
 			# Iterate through each cell in the block
 			for row, col in doubleIter(3):

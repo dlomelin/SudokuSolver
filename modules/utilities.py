@@ -1,14 +1,14 @@
 def instantiateMatrix(size):
 	matrix = []
-	for i in range(size):
+	for i in xrange(size):
 		matrix.append([])
-		for j in range(size):
+		for j in xrange(size):
 			matrix[i].append([])
 	return matrix
 
 def doubleIter(num):
-	for x in range(num):
-		for y in range(num):
+	for x in xrange(num):
+		for y in xrange(num):
 			yield x, y
 
 # Returns a set of numbers from 1-N^2
@@ -26,5 +26,5 @@ def numDictList(size):
 	return dictList
 
 def cellIdIter(size):
-	for x in map(str, range(1, (size**2)+1)):
+	for x in map(str, xrange(1, (size**2)+1)):
 		yield x

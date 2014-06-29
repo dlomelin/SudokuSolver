@@ -36,7 +36,7 @@ def main():
 
 def printGridValues(gridList):
 	print '['
-	for i in range(len(gridList)):
+	for i in xrange(len(gridList)):
 		print '%s,' % (str(gridList[i]).replace('.', ' '))
 	print ']'
 
