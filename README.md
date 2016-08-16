@@ -1,5 +1,6 @@
 SudokuSolver
 ============
+[![Build Status](https://travis-ci.org/dlomelin/SudokuSolver.svg?branch=master)](https://travis-ci.org/dlomelin/SudokuSolver)
 
 Solver for Sudoku puzzles that uses logic based techniques.
 
