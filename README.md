@@ -1,6 +1,7 @@
 SudokuSolver
 ============
 [![Build Status](https://travis-ci.org/dlomelin/SudokuSolver.svg?branch=master)](https://travis-ci.org/dlomelin/SudokuSolver)
+[![Coverage Status](https://coveralls.io/repos/github/dlomelin/SudokuSolver/badge.svg?branch=master)](https://coveralls.io/github/dlomelin/SudokuSolver?branch=master)
 
 Solver for Sudoku puzzles that uses logic based techniques.
 
