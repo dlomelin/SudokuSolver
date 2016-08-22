@@ -4,12 +4,11 @@ python:
 
 # Install all dependencies
 install:
- - pip install python-coveralls
- - pip install coverage
+ - pip install tox
 
 # Run all tests
 script:
- - nosetests --with-coverage --cover-erase
+ - tox
 
 after_success:
- - coveralls
+ - tox -e coveralls
