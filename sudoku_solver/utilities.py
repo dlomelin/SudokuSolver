@@ -1,4 +1,7 @@
-def instantiateMatrix(size):
+'''.'''
+
+
+def instantiate_matrix(size):
     matrix = []
     for i in xrange(size):
         matrix.append([])
@@ -6,25 +9,30 @@ def instantiateMatrix(size):
             matrix[i].append([])
     return matrix
 
-def doubleIter(num):
+
+def double_iter(num):
     for x in xrange(num):
         for y in xrange(num):
             yield x, y
 
-# Returns a set of numbers from 1-N^2
-def numberSet(size):
+
+def number_set(size):
+    ''' Returns a set of numbers from 1-N^2 '''
+
     numList = []
-    for x in cellIdIter(size):
+    for x in cell_id_iter(size):
         numList.append(x)
     return set(numList)
 
-# Returns a dictionary with keys being numbers 1-N^2 and values as empty lists
-def numDictList(size):
+
+def num_dict_list(size):
+    ''' Returns a dictionary with keys being numbers 1-N^2 and values as empty lists '''
     dictList = {}
-    for x in cellIdIter(size):
+    for x in cell_id_iter(size):
         dictList[x] = []
     return dictList
 
-def cellIdIter(size):
+
+def cell_id_iter(size):
     for x in map(str, xrange(1, (size**2)+1)):
         yield x

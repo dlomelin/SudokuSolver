@@ -1,21 +1,25 @@
-# Simple class wrapper to make coordinate retrieval easier
+'''.'''
+
+
 class SudokuCoordinates(object):
+    ''' Simple class wrapper to make coordinate retrieval easier '''
+
     def __init__(self, blockRow, blockCol, row, col):
         self.blockRow = blockRow
         self.blockCol = blockCol
         self.row = row
         self.col = col
 
-    # Just for thoroughness
     def __repr__(self):
+        ''' Just for thoroughness '''
         return '%s(%s,%s,%s,%s)' % (self.__class__.__name__, self.blockRow, self.blockCol, self.row, self.col)
 
-    # Allows for storing object in a set([]) and using a sets' methods correctly
     def __hash__(self):
+        ''' Allows for storing object in a set([]) and using a sets' methods correctly '''
         return hash((self.blockRow, self.blockCol, self.row, self.col))
 
-    # Allows for using str(obj)
     def __str__(self):
+        ''' Allows for using str(obj) '''
         return '(%s,%s,%s,%s)' % (self.blockRow, self.blockCol, self.row, self.col)
 
     # Allows for testing obj1 == obj2

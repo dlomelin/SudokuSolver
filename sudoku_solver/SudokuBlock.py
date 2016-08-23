@@ -1,7 +1,9 @@
-from sudoku_solver.utilities import instantiateMatrix, doubleIter, numberSet
+from sudoku_solver.utilities import instantiate_matrix, double_iter, number_set
 
-# Class that represents a NxN sudoku block with N^2 cells
+
 class SudokuBlock(object):
+    ''' Class that represents a NxN sudoku block with N^2 cells '''
+
     def __init__(self, numList):
         # Set the values to what the user passed in, which should be a list of lists
         # Ex: [['9', '7', ' '], [' ', ' ', ' '], ['5', '6', '3']]
@@ -37,7 +39,7 @@ class SudokuBlock(object):
         validNums = set()
 
         # Iterate through each of the N^2 cells
-        for row, col in doubleIter(self.__squareSize):
+        for row, col in double_iter(self.__squareSize):
             # Check if there is a valid digit in the cell
             num = self.getValue(row, col)
             if num:
@@ -58,7 +60,7 @@ class SudokuBlock(object):
         allComplete = True
 
         # Iterate through each of the N^2 cells
-        for row, col in doubleIter(self.__squareSize):
+        for row, col in double_iter(self.__squareSize):
             # Check if the cell contains a digit
             if not self.getValue(row, col):
                 allComplete = False
@@ -141,16 +143,16 @@ class SudokuBlock(object):
     # Creates new notes for each of the N^2 cells
     def __createCandidateNumbers(self):
         # Creates a NxN matrix.  Each cell will have its own set of notes
-        self.__candidates = instantiateMatrix(self.__squareSize)
+        self.__candidates = instantiate_matrix(self.__squareSize)
 
         # Iterate through each of the N^2 cells and assign a new set of notes
-        for row, col in doubleIter(self.__squareSize):
-            self.__candidates[row][col] = numberSet(self.__squareSize)
+        for row, col in double_iter(self.__squareSize):
+            self.__candidates[row][col] = number_set(self.__squareSize)
 
     # Remove all notes for cells that have been assigned a number
     def __eliminateKnownNumbers(self):
         # Iterate through each of the N^2 cells
-        for row, col in doubleIter(self.__squareSize):
+        for row, col in double_iter(self.__squareSize):
             # Remove all notes for the cell if it has been assigned a number
             if self.getValue(row, col):
                 self.clearCandidates(row, col)

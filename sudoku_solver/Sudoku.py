@@ -1,9 +1,12 @@
+'''.'''
+
 import os, sys, time
 from itertools import combinations, chain
 
-from sudoku_solver.utilities import instantiateMatrix, doubleIter, numberSet, numDictList
+from sudoku_solver.utilities import instantiate_matrix, double_iter, number_set, num_dict_list
 from sudoku_solver.SudokuBlock import SudokuBlock
 from sudoku_solver.SudokuCoordinates import SudokuCoordinates
+
 
 class Sudoku(object):
     def __init__(self, **args):
@@ -68,9 +71,9 @@ class Sudoku(object):
     def gridValues(self):
         values = []
 
-        for matRow, row in doubleIter(3):
+        for matRow, row in double_iter(3):
             values.append([])
-            for matCol, col in doubleIter(3):
+            for matCol, col in double_iter(3):
                 num = self.getCellValue(matRow, matCol, row, col)
                 if not num:
                     num = '.'
@@ -134,7 +137,7 @@ class Sudoku(object):
         allComplete = True
 
         # Iterate through each of the 9 blocks
-        for blockRow, blockCol in doubleIter(3):
+        for blockRow, blockCol in double_iter(3):
             # Check if the block is complete
             if not self.__completeBlock(blockRow, blockCol):
                 allComplete = False
@@ -291,7 +294,7 @@ class Sudoku(object):
     # assigned, and remove them from the list of unassigned numbers
     def __findUnassignedNums(self, cellCoordinatesList):
         # Create a list of all possible numbers that can be assigned to the current set of cells
-        unassignedNums = numberSet(3)
+        unassignedNums = number_set(3)
 
         # Iterate through each cell's coordinates
         for cellCoords in cellCoordinatesList:
@@ -475,7 +478,7 @@ class Sudoku(object):
 
     # Loads data from a list of lists
     def __loadFromData(self, data):
-        tempMatrix = instantiateMatrix(3)
+        tempMatrix = instantiate_matrix(3)
         currentBlockRow = 0
 
         for nums in data:
@@ -515,9 +518,9 @@ class Sudoku(object):
 
     # Converts the temporary matrix into one that has SudokuBlock objects
     def __instantiateSudokuMatrix(self, tempMatrix):
-        self.__matrix = instantiateMatrix(3)
+        self.__matrix = instantiate_matrix(3)
         # Iterate through each of the 9 blocks
-        for blockRow, blockCol in doubleIter(3):
+        for blockRow, blockCol in double_iter(3):
             self.__matrix[blockRow][blockCol] = SudokuBlock(tempMatrix[blockRow][blockCol])
 
         # Adjusts the candidates based on the initial values of the sudoku grid.
@@ -679,7 +682,7 @@ class Sudoku(object):
 
     # Stores the coordinates for all hint positions
     def __generateHintCoords(self, cellCoordinatesList):
-        hintCoords = numDictList(3)
+        hintCoords = num_dict_list(3)
 
         # Iterate through each cell's coordinates
         for cellCoords in cellCoordinatesList:
@@ -817,11 +820,11 @@ class Sudoku(object):
     # swordfish, jellyfish type puzzles
     def __potentialRectangleCells(self, cellCount, coordIter):
 
-        potentialCells = numDictList(3)
+        potentialCells = num_dict_list(3)
 
         # Iterate through each row/cell in the sudoku grid
         for cellCoordinatesList in coordIter():
-            hintCoords = numDictList(3)
+            hintCoords = num_dict_list(3)
 
             # Iterate through each cell's coordinates
             for cellCoords in cellCoordinatesList:
@@ -1248,7 +1251,7 @@ class Sudoku(object):
         for blockColLoop in filter(lambda x: x != blockCol, xrange(3)):
 
             # Iterate through each cell in the block
-            for row, col in doubleIter(3):
+            for row, col in double_iter(3):
 
                 # Check the cell's candidates if num can be placed here.  If it can, track the row and block
                 candidates = self.getCellCandidates(blockRow, blockColLoop, row, col)
@@ -1272,7 +1275,7 @@ class Sudoku(object):
         for blockRowLoop in filter(lambda x: x != blockRow, xrange(3)):
 
             # Iterate through each cell in the block
-            for row, col in doubleIter(3):
+            for row, col in double_iter(3):
 
                 # Check the cell's candidates if num can be placed here.  If it can, track the column and block
                 candidates = self.getCellCandidates(blockRowLoop, blockCol, row, col)
@@ -1352,7 +1355,7 @@ class Sudoku(object):
     # list are coordinate objects for each cell.
     # [1, 2, 3], [4, 5, 6], [7, 8, 9]
     def __rowCoordsIter(self):
-        for blockRow, row in doubleIter(3):
+        for blockRow, row in double_iter(3):
             rowCoords = []
             for coords in self.__rowCellCoordsIter(blockRow, row):
                 rowCoords.append(coords)
@@ -1360,7 +1363,7 @@ class Sudoku(object):
 
     # Iterator that yields coordinate objects found in the row specified with blockRow, row
     def __rowCellCoordsIter(self, blockRow, row):
-        for blockCol, col in doubleIter(3):
+        for blockCol, col in double_iter(3):
             yield SudokuCoordinates(blockRow, blockCol, row, col)
 
     # Iterator that yields lists, which contain the coordinates for every cell
@@ -1375,7 +1378,7 @@ class Sudoku(object):
     # list are coordinate objects for each cell.
     # [1, 4, 7], [2, 5, 8], [3, 6, 9]
     def __columnCoordsIter(self):
-        for blockCol, col in doubleIter(3):
+        for blockCol, col in double_iter(3):
             colCoords = []
             for coords in self.__colCellCoordsIter(blockCol, col):
                 colCoords.append(coords)
@@ -1383,7 +1386,7 @@ class Sudoku(object):
 
     # Iterator that yields coordinate objects found in the column specified with blockCol, col
     def __colCellCoordsIter(self, blockCol, col):
-        for blockRow, row in doubleIter(3):
+        for blockRow, row in double_iter(3):
             yield SudokuCoordinates(blockRow, blockCol, row, col)
 
     # Iterator that yields lists, which contain the coordinates for every cell
@@ -1400,7 +1403,7 @@ class Sudoku(object):
     # list are coordinate objects for each cell.
     # [1, 2, 5, 6], [3, 4, 7, 8], [9, 0, $, %], [*, @, ^, &]
     def __blockCoordsIter(self):
-        for blockRow, blockCol in doubleIter(3):
+        for blockRow, blockCol in double_iter(3):
             blockCoords = []
             for coords in self.__blockCellCoordsIter(blockRow, blockCol):
                 blockCoords.append(coords)
@@ -1408,7 +1411,7 @@ class Sudoku(object):
 
     # Iterator that yields coordinate objects found in the block specified with blockRow, blockCol
     def __blockCellCoordsIter(self, blockRow, blockCol):
-        for row, col in doubleIter(3):
+        for row, col in double_iter(3):
             yield SudokuCoordinates(blockRow, blockCol, row, col)
     #
     # Private Iterator Methods
