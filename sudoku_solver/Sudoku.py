@@ -137,9 +137,9 @@ class Sudoku(object):
         allComplete = True
 
         # Iterate through each of the 9 blocks
-        for blockRow, blockCol in double_iter(3):
+        for block_row, block_col in double_iter(3):
             # Check if the block is complete
-            if not self.__completeBlock(blockRow, blockCol):
+            if not self.__completeBlock(block_row, block_col):
                 allComplete = False
                 break
 
@@ -152,16 +152,16 @@ class Sudoku(object):
         header = 'Current Candidates'.center(len(self.__blockRowSplit()))
 
         fhOut.write('%s\n' % (header))
-        for blockRow in xrange(3):
-            if blockRow == 0:
+        for block_row in xrange(3):
+            if block_row == 0:
                 fhOut.write('%s\n' % (self.__blockRowSplit()))
             for row in xrange(3):
                 for i in xrange(len(candidateNums)):
                     fhOut.write('||')
-                    for blockCol in xrange(3):
+                    for block_col in xrange(3):
                         for col in xrange(3):
                             numString = ''
-                            candidates = self.getCellCandidates(blockRow, blockCol, row, col)
+                            candidates = self.getCellCandidates(block_row, block_col, row, col)
                             for num in candidateNums[i]:
                                 if num in candidates:
                                     numString += '%s' % (num)
@@ -186,12 +186,12 @@ class Sudoku(object):
         fhOut.write('\n')
 
     # Returns the value of a cell at the specified coordinates
-    def getCellValue(self, blockRow, blockCol, row, col):
-        return self.__matrix[blockRow][blockCol].getValue(row, col)
+    def getCellValue(self, block_row, block_col, row, col):
+        return self.__matrix[block_row][block_col].get_value(row, col)
 
     # Returns the set() of candidates at the specified coordinates
-    def getCellCandidates(self, blockRow, blockCol, row, col):
-        return self.__matrix[blockRow][blockCol].getCandidates(row, col)
+    def getCellCandidates(self, block_row, block_col, row, col):
+        return self.__matrix[block_row][block_col].get_candidates(row, col)
 
     ###################
     # Private Methods #
@@ -230,22 +230,22 @@ class Sudoku(object):
     ###### START
     # Wrappers around SudokuBlock methods
     #
-    def __deleteCandidateNumber(self, num, blockRow, blockCol, row, col):
-        self.__matrix[blockRow][blockCol].deleteCandidateNumber(num, row, col)
+    def __deleteCandidateNumber(self, num, block_row, block_col, row, col):
+        self.__matrix[block_row][block_col].delete_candidate_number(num, row, col)
 
     # Sets the value of the specified cell
-    def __setCellValue(self, num, blockRow, blockCol, row, col):
-        self.__matrix[blockRow][blockCol].setValue(num, row, col)
+    def __setCellValue(self, num, block_row, block_col, row, col):
+        self.__matrix[block_row][block_col].set_value(num, row, col)
 
     # Clears out available candidates from the specified cell
-    def __clearCellCandidates(self, blockRow, blockCol, row, col):
-        self.__matrix[blockRow][blockCol].clearCandidates(row, col)
+    def __clearCellCandidates(self, block_row, block_col, row, col):
+        self.__matrix[block_row][block_col].clear_candidates(row, col)
 
-    def __validBlock(self, blockRow, blockCol):
-        return self.__matrix[blockRow][blockCol].valid()
+    def __validBlock(self, block_row, block_col):
+        return self.__matrix[block_row][block_col].valid()
 
-    def __completeBlock(self, blockRow, blockCol):
-        return self.__matrix[blockRow][blockCol].complete()
+    def __completeBlock(self, block_row, block_col):
+        return self.__matrix[block_row][block_col].complete()
     #
     # Wrappers around SudokuBlock methods
     ###### END
@@ -255,33 +255,33 @@ class Sudoku(object):
     #
     # Sets the value of the specified cell and adjusts the candidates in the
     # necessary row, column, and block.
-    def __setValue(self, num, blockRow, blockCol, row, col, techniqueUsed = None):
+    def __setValue(self, num, block_row, block_col, row, col, techniqueUsed = None):
         # Sets the value of the specified cell
-        self.__setCellValue(num, blockRow, blockCol, row, col)
+        self.__setCellValue(num, block_row, block_col, row, col)
 
         # Clears out available candidates from the specified cell
-        self.__clearCellCandidates(blockRow, blockCol, row, col)
+        self.__clearCellCandidates(block_row, block_col, row, col)
 
         # Clears out available candidates from the affected block, row, and column
-        self.__removeCandidateSeenBy(num, blockRow, blockCol, row, col)
+        self.__removeCandidateSeenBy(num, block_row, block_col, row, col)
 
         # Let the solver know changes were made
         self.__setChangeTrue(techniqueUsed)
 
     # Deletes the specified number from the cell's candidates.  If there is only
     # one number left in the candidates, then it sets the value
-    def __clearCellCandidateAndSet(self, num, blockRow, blockCol, row, col, techniqueUsed):
+    def __clearCellCandidateAndSet(self, num, block_row, block_col, row, col, techniqueUsed):
 
-        candidates = self.getCellCandidates(blockRow, blockCol, row, col)
+        candidates = self.getCellCandidates(block_row, block_col, row, col)
         if num in candidates:
-            self.__deleteCandidateNumber(num, blockRow, blockCol, row, col)
+            self.__deleteCandidateNumber(num, block_row, block_col, row, col)
 
             nums = list(candidates)
             if len(nums) == 1:
                 self.__setValue(
                     nums[0],
-                    blockRow,
-                    blockCol,
+                    block_row,
+                    block_col,
                     row,
                     col,
                     techniqueUsed,
@@ -301,8 +301,8 @@ class Sudoku(object):
 
             # Remove the already assigned number in the current cell from the list of possible numbers
             num = self.getCellValue(
-                cellCoords.blockRow,
-                cellCoords.blockCol,
+                cellCoords.block_row,
+                cellCoords.block_col,
                 cellCoords.row,
                 cellCoords.col,
             )
@@ -312,14 +312,14 @@ class Sudoku(object):
         return unassignedNums
 
     # Clears out available candidates from the affected block, row, and column
-    def __removeCandidateSeenBy(self, num, blockRow, blockCol, row, col):
+    def __removeCandidateSeenBy(self, num, block_row, block_col, row, col):
 
         # Remove the number from the candidates along the block
         self.__removeCandidateByIter(
             num,
             self.__blockCellCoordsIter,
-            blockRow,
-            blockCol,
+            block_row,
+            block_col,
             [],
         )
 
@@ -327,7 +327,7 @@ class Sudoku(object):
         self.__removeCandidateByIter(
             num,
             self.__rowCellCoordsIter,
-            blockRow,
+            block_row,
             row,
             [],
         )
@@ -336,7 +336,7 @@ class Sudoku(object):
         self.__removeCandidateByIter(
             num,
             self.__colCellCoordsIter,
-            blockCol,
+            block_col,
             col,
             [],
         )
@@ -351,8 +351,8 @@ class Sudoku(object):
                 # Remove the numbers from the cell candidates
                 self.__clearCellCandidateAndSet(
                     num,
-                    coords.blockRow,
-                    coords.blockCol,
+                    coords.block_row,
+                    coords.block_col,
                     coords.row,
                     coords.col,
                     technique,
@@ -383,15 +383,15 @@ class Sudoku(object):
         uniqueCoords = set()
 
         # Store all coordinates in the same block as centerCoord
-        for coord in self.__blockCellCoordsIter(centerCoord.blockRow, centerCoord.blockCol):
+        for coord in self.__blockCellCoordsIter(centerCoord.block_row, centerCoord.block_col):
             uniqueCoords.add(coord)
 
         # Store all coordinates in the same row as centerCoord
-        for coord in self.__rowCellCoordsIter(centerCoord.blockRow, centerCoord.row):
+        for coord in self.__rowCellCoordsIter(centerCoord.block_row, centerCoord.row):
             uniqueCoords.add(coord)
 
         # Store all coordinates in the same column as centerCoord
-        for coord in self.__colCellCoordsIter(centerCoord.blockCol, centerCoord.col):
+        for coord in self.__colCellCoordsIter(centerCoord.block_col, centerCoord.col):
             uniqueCoords.add(coord)
 
         # Remove centerCoord
@@ -408,8 +408,8 @@ class Sudoku(object):
 
             # Look for cells that pass the criteria set forth by validCellFunction
             cellCandidates = self.getCellCandidates(
-                cellCoords.blockRow,
-                cellCoords.blockCol,
+                cellCoords.block_row,
+                cellCoords.block_col,
                 cellCoords.row,
                 cellCoords.col,
             )
@@ -508,10 +508,10 @@ class Sudoku(object):
         return list(line)
 
     # Returns True if the current row of blocks are all full
-    def __currentBlockRowFull(self, matrix, blockRow):
-        if len(matrix[blockRow][0]) == 3 and \
-            len(matrix[blockRow][1]) == 3 and \
-            len(matrix[blockRow][2]) == 3:
+    def __currentBlockRowFull(self, matrix, block_row):
+        if len(matrix[block_row][0]) == 3 and \
+            len(matrix[block_row][1]) == 3 and \
+            len(matrix[block_row][2]) == 3:
             return True
         else:
             return False
@@ -520,8 +520,8 @@ class Sudoku(object):
     def __instantiateSudokuMatrix(self, tempMatrix):
         self.__matrix = instantiate_matrix(3)
         # Iterate through each of the 9 blocks
-        for blockRow, blockCol in double_iter(3):
-            self.__matrix[blockRow][blockCol] = SudokuBlock(tempMatrix[blockRow][blockCol])
+        for block_row, block_col in double_iter(3):
+            self.__matrix[block_row][block_col] = SudokuBlock(tempMatrix[block_row][block_col])
 
         # Adjusts the candidates based on the initial values of the sudoku grid.
         self.__clearInitialCandidates()
@@ -537,8 +537,8 @@ class Sudoku(object):
 
                 # If the cell has a number assigned, then clear the block, row, and column candidates
                 num = self.getCellValue(
-                    cellCoords.blockRow,
-                    cellCoords.blockCol,
+                    cellCoords.block_row,
+                    cellCoords.block_col,
                     cellCoords.row,
                     cellCoords.col,
                 )
@@ -546,8 +546,8 @@ class Sudoku(object):
                     # Clears out available candidates from the affected block, row, and column
                     self.__removeCandidateSeenBy(
                         num,
-                        cellCoords.blockRow,
-                        cellCoords.blockCol,
+                        cellCoords.block_row,
+                        cellCoords.block_col,
                         cellCoords.row,
                         cellCoords.col,
                     )
@@ -607,9 +607,9 @@ class Sudoku(object):
                 for cellCoords in cellCoordinatesList:
 
                     # If that position was already assigned a number then skip it
-                    if not self.getCellValue(cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col):
+                    if not self.getCellValue(cellCoords.block_row, cellCoords.block_col, cellCoords.row, cellCoords.col):
                         # Grab the set() of available values for the current cell
-                        candidates = self.getCellCandidates(cellCoords.blockRow, cellCoords.blockCol, cellCoords.row, cellCoords.col)
+                        candidates = self.getCellCandidates(cellCoords.block_row, cellCoords.block_col, cellCoords.row, cellCoords.col)
                         # Keep track of how many positions will allow the current value
                         if currentValue in candidates:
                             availableCellCount += 1
@@ -624,8 +624,8 @@ class Sudoku(object):
                 if availableCellCount == 1:
                     self.__setValue(
                         currentValue,
-                        availableCellCoords.blockRow,
-                        availableCellCoords.blockCol,
+                        availableCellCoords.block_row,
+                        availableCellCoords.block_col,
                         availableCellCoords.row,
                         availableCellCoords.col,
                     )
@@ -657,24 +657,24 @@ class Sudoku(object):
                     coords2 = hintCoords[num][1]
 
                     # Candidate line lies along a row, therefore remove number from the rest of the row
-                    if coords1.alignsByRow(coords2):
+                    if coords1.aligns_by_row(coords2):
                         # Remove the number from the candidates along the row
                         self.__removeCandidateByIter(
                             num,
                             self.__rowCellCoordsIter,
-                            coords1.blockRow,
+                            coords1.block_row,
                             coords1.row,
                             [coords1, coords2],
                             technique,
                         )
 
                     # Candidate line lies along a column, therefore remove number from the rest of the column
-                    elif coords1.alignsByCol(coords2):
+                    elif coords1.aligns_by_col(coords2):
                         # Remove the number from the candidates along the column
                         self.__removeCandidateByIter(
                             num,
                             self.__colCellCoordsIter,
-                            coords1.blockCol,
+                            coords1.block_col,
                             coords1.col,
                             [coords1, coords2],
                             technique,
@@ -688,8 +688,8 @@ class Sudoku(object):
         for cellCoords in cellCoordinatesList:
             # Store the coordinates where all numbers are found
             candidates = self.getCellCandidates(
-                cellCoords.blockRow,
-                cellCoords.blockCol,
+                cellCoords.block_row,
+                cellCoords.block_col,
                 cellCoords.row,
                 cellCoords.col,
             )
@@ -735,7 +735,7 @@ class Sudoku(object):
                         self.__removeCandidateByIter(
                             num,
                             self.__colCellCoordsIter,
-                            blockCoords.blockCol,
+                            blockCoords.block_col,
                             blockCoords.col,
                             list(chain(*dataset)),
                             technique,
@@ -763,7 +763,7 @@ class Sudoku(object):
                         self.__removeCandidateByIter(
                             num,
                             self.__rowCellCoordsIter,
-                            blockCoords.blockRow,
+                            blockCoords.block_row,
                             blockCoords.row,
                             list(chain(*dataset)),
                             technique,
@@ -778,7 +778,7 @@ class Sudoku(object):
             if not data:
                 completeDataLists = False
             for coords in data:
-                row = '%s,%s' % (coords.blockRow, coords.row)
+                row = '%s,%s' % (coords.block_row, coords.row)
                 rowData.add(row)
 
         return rowData.keyCount() == cellCount and rowData.countsGE(2) and completeDataLists
@@ -792,7 +792,7 @@ class Sudoku(object):
             if not data:
                 completeDataLists = False
             for coords in data:
-                col = '%s,%s' % (coords.blockCol, coords.col)
+                col = '%s,%s' % (coords.block_col, coords.col)
                 colData.add(col)
 
         return colData.keyCount() == cellCount and colData.countsGE(2) and completeDataLists
@@ -802,7 +802,7 @@ class Sudoku(object):
 
         for data in dataList:
             for coords in data:
-                rowSet.add(SudokuCoordinates(coords.blockRow, 0, coords.row, 0))
+                rowSet.add(SudokuCoordinates(coords.block_row, 0, coords.row, 0))
 
         return rowSet
 
@@ -811,7 +811,7 @@ class Sudoku(object):
 
         for data in dataList:
             for coords in data:
-                colSet.add(SudokuCoordinates(0, coords.blockCol, 0, coords.col))
+                colSet.add(SudokuCoordinates(0, coords.block_col, 0, coords.col))
 
         return colSet
 
@@ -831,8 +831,8 @@ class Sudoku(object):
 
                 # Loop through all candidates in the current cell
                 candidates = self.getCellCandidates(
-                    cellCoords.blockRow,
-                    cellCoords.blockCol,
+                    cellCoords.block_row,
+                    cellCoords.block_col,
                     cellCoords.row,
                     cellCoords.col,
                 )
@@ -886,8 +886,8 @@ class Sudoku(object):
 
                 # Store the cell's coordinates and candidates
                 candidates = self.getCellCandidates(
-                    cellCoords.blockRow,
-                    cellCoords.blockCol,
+                    cellCoords.block_row,
+                    cellCoords.block_col,
                     cellCoords.row,
                     cellCoords.col,
                 )
@@ -937,8 +937,8 @@ class Sudoku(object):
                             # Remove the numbers from the cell candidates
                             self.__clearCellCandidateAndSet(
                                 num,
-                                coords.blockRow,
-                                coords.blockCol,
+                                coords.block_row,
+                                coords.block_col,
                                 coords.row,
                                 coords.col,
                                 technique,
@@ -987,8 +987,8 @@ class Sudoku(object):
 
         # Look for a pivot cell that has 2 unknown candidates
         pivotCellCandidates = self.getCellCandidates(
-            coords.blockRow,
-            coords.blockCol,
+            coords.block_row,
+            coords.block_col,
             coords.row,
             coords.col,
         )
@@ -1018,8 +1018,8 @@ class Sudoku(object):
                         for rCoords in removeCoords:
                             self.__clearCellCandidateAndSet(
                                 removeNum,
-                                rCoords.blockRow,
-                                rCoords.blockCol,
+                                rCoords.block_row,
+                                rCoords.block_col,
                                 rCoords.row,
                                 rCoords.col,
                                 technique,
@@ -1051,8 +1051,8 @@ class Sudoku(object):
 
         # Look for a pivot point that has 3 unknown candidates
         pivotCellCandidates = self.getCellCandidates(
-            coords.blockRow,
-            coords.blockCol,
+            coords.block_row,
+            coords.block_col,
             coords.row,
             coords.col,
         )
@@ -1085,8 +1085,8 @@ class Sudoku(object):
                     for rCoords in removeCoords:
                         self.__clearCellCandidateAndSet(
                             removeNum,
-                            rCoords.blockRow,
-                            rCoords.blockCol,
+                            rCoords.block_row,
+                            rCoords.block_col,
                             rCoords.row,
                             rCoords.col,
                             technique,
@@ -1118,8 +1118,8 @@ class Sudoku(object):
         technique = 'WXYZ-Wing'
 
         pivotCellCandidates = self.getCellCandidates(
-            coords.blockRow,
-            coords.blockCol,
+            coords.block_row,
+            coords.block_col,
             coords.row,
             coords.col,
         )
@@ -1157,8 +1157,8 @@ class Sudoku(object):
                     for rCoords in removeCoords:
                         self.__clearCellCandidateAndSet(
                             removeNum,
-                            rCoords.blockRow,
-                            rCoords.blockCol,
+                            rCoords.block_row,
+                            rCoords.block_col,
                             rCoords.row,
                             rCoords.col,
                             technique,
@@ -1171,9 +1171,9 @@ class Sudoku(object):
         for indexList in combinations(xrange(len(coordsList)), 2):
 
             # Look for cells that can't see each other
-            if not coordsList[indexList[0]].alignsByRow(coordsList[indexList[1]]) and \
-                not coordsList[indexList[0]].alignsByCol(coordsList[indexList[1]]) and \
-                not coordsList[indexList[0]].alignsByBlock(coordsList[indexList[1]]):
+            if not coordsList[indexList[0]].aligns_by_row(coordsList[indexList[1]]) and \
+                not coordsList[indexList[0]].aligns_by_col(coordsList[indexList[1]]) and \
+                not coordsList[indexList[0]].aligns_by_block(coordsList[indexList[1]]):
 
                 # Look for the numbers shared in common between both cells
                 intersectionSet = candidatesList[indexList[0]].intersection(candidatesList[indexList[1]])
@@ -1200,8 +1200,8 @@ class Sudoku(object):
         for cellCoordinatesList in self.__blockCoordsIter():
 
             # Extract the current block coordinates
-            blockRow = cellCoordinatesList[0].blockRow
-            blockCol = cellCoordinatesList[0].blockCol
+            block_row = cellCoordinatesList[0].block_row
+            block_col = cellCoordinatesList[0].block_col
 
             # Generate list of numbers that can still be assigned to the
             # remaining cells in the row or column
@@ -1211,7 +1211,7 @@ class Sudoku(object):
             for num in unassignedNums:
 
                 # Identify the rows in the current block that can have the number eliminated from the candidates
-                sharedRows = self.__findSharedLinesByRow(num, blockRow, blockCol)
+                sharedRows = self.__findSharedLinesByRow(num, block_row, block_col)
                 if sharedRows:
 
                     # Remove the number from the cell's candidates
@@ -1219,15 +1219,15 @@ class Sudoku(object):
                         for col in xrange(3):
                             self.__clearCellCandidateAndSet(
                                 num,
-                                blockRow,
-                                blockCol,
+                                block_row,
+                                block_col,
                                 row,
                                 col,
                                 technique,
                             )
 
                 # Identify the columns in the current block that can have the number eliminated from the candidates
-                sharedCols = self.__findSharedLinesByCol(num, blockRow, blockCol)
+                sharedCols = self.__findSharedLinesByCol(num, block_row, block_col)
                 if sharedCols:
 
                     # Remove the number from the cell's candidates
@@ -1235,26 +1235,26 @@ class Sudoku(object):
                         for row in xrange(3):
                             self.__clearCellCandidateAndSet(
                                 num,
-                                blockRow,
-                                blockCol,
+                                block_row,
+                                block_col,
                                 row,
                                 col,
                                 technique,
                             )
 
     # Identify the rows in the current block that can have the number eliminated from the candidates
-    def __findSharedLinesByRow(self, num, blockRow, blockCol):
+    def __findSharedLinesByRow(self, num, block_row, block_col):
         sharedRows = set()
         affectedBlocks = set()
 
         # Iterate through the remaining columns except for the starting one
-        for blockColLoop in filter(lambda x: x != blockCol, xrange(3)):
+        for blockColLoop in filter(lambda x: x != block_col, xrange(3)):
 
             # Iterate through each cell in the block
             for row, col in double_iter(3):
 
                 # Check the cell's candidates if num can be placed here.  If it can, track the row and block
-                candidates = self.getCellCandidates(blockRow, blockColLoop, row, col)
+                candidates = self.getCellCandidates(block_row, blockColLoop, row, col)
                 if num in candidates:
                     sharedRows.add(row)
                     affectedBlocks.add(blockColLoop)
@@ -1267,18 +1267,18 @@ class Sudoku(object):
             return set()
 
     # Identify the columns in the current block that can have the number eliminated from the candidates
-    def __findSharedLinesByCol(self, num, blockRow, blockCol):
+    def __findSharedLinesByCol(self, num, block_row, block_col):
         sharedCols = set()
         affectedBlocks = set()
 
         # Iterate through the remaining rows except for the starting one
-        for blockRowLoop in filter(lambda x: x != blockRow, xrange(3)):
+        for blockRowLoop in filter(lambda x: x != block_row, xrange(3)):
 
             # Iterate through each cell in the block
             for row, col in double_iter(3):
 
                 # Check the cell's candidates if num can be placed here.  If it can, track the column and block
-                candidates = self.getCellCandidates(blockRowLoop, blockCol, row, col)
+                candidates = self.getCellCandidates(blockRowLoop, block_col, row, col)
                 if num in candidates:
                     sharedCols.add(col)
                     affectedBlocks.add(blockRowLoop)
@@ -1320,8 +1320,8 @@ class Sudoku(object):
             # Iterate through each cell's coordinates
             for cellCoords in cellCoordinatesList:
                 num = self.getCellValue(
-                    cellCoords.blockRow,
-                    cellCoords.blockCol,
+                    cellCoords.block_row,
+                    cellCoords.block_col,
                     cellCoords.row,
                     cellCoords.col,
                 )
@@ -1355,16 +1355,16 @@ class Sudoku(object):
     # list are coordinate objects for each cell.
     # [1, 2, 3], [4, 5, 6], [7, 8, 9]
     def __rowCoordsIter(self):
-        for blockRow, row in double_iter(3):
+        for block_row, row in double_iter(3):
             rowCoords = []
-            for coords in self.__rowCellCoordsIter(blockRow, row):
+            for coords in self.__rowCellCoordsIter(block_row, row):
                 rowCoords.append(coords)
             yield rowCoords
 
-    # Iterator that yields coordinate objects found in the row specified with blockRow, row
-    def __rowCellCoordsIter(self, blockRow, row):
-        for blockCol, col in double_iter(3):
-            yield SudokuCoordinates(blockRow, blockCol, row, col)
+    # Iterator that yields coordinate objects found in the row specified with block_row, row
+    def __rowCellCoordsIter(self, block_row, row):
+        for block_col, col in double_iter(3):
+            yield SudokuCoordinates(block_row, block_col, row, col)
 
     # Iterator that yields lists, which contain the coordinates for every cell
     # that corresponds to a column in the sudoku grid.
@@ -1378,16 +1378,16 @@ class Sudoku(object):
     # list are coordinate objects for each cell.
     # [1, 4, 7], [2, 5, 8], [3, 6, 9]
     def __columnCoordsIter(self):
-        for blockCol, col in double_iter(3):
+        for block_col, col in double_iter(3):
             colCoords = []
-            for coords in self.__colCellCoordsIter(blockCol, col):
+            for coords in self.__colCellCoordsIter(block_col, col):
                 colCoords.append(coords)
             yield colCoords
 
-    # Iterator that yields coordinate objects found in the column specified with blockCol, col
-    def __colCellCoordsIter(self, blockCol, col):
-        for blockRow, row in double_iter(3):
-            yield SudokuCoordinates(blockRow, blockCol, row, col)
+    # Iterator that yields coordinate objects found in the column specified with block_col, col
+    def __colCellCoordsIter(self, block_col, col):
+        for block_row, row in double_iter(3):
+            yield SudokuCoordinates(block_row, block_col, row, col)
 
     # Iterator that yields lists, which contain the coordinates for every cell
     # that corresponds to a block in the sudoku grid.
@@ -1403,16 +1403,16 @@ class Sudoku(object):
     # list are coordinate objects for each cell.
     # [1, 2, 5, 6], [3, 4, 7, 8], [9, 0, $, %], [*, @, ^, &]
     def __blockCoordsIter(self):
-        for blockRow, blockCol in double_iter(3):
+        for block_row, block_col in double_iter(3):
             blockCoords = []
-            for coords in self.__blockCellCoordsIter(blockRow, blockCol):
+            for coords in self.__blockCellCoordsIter(block_row, block_col):
                 blockCoords.append(coords)
             yield blockCoords
 
-    # Iterator that yields coordinate objects found in the block specified with blockRow, blockCol
-    def __blockCellCoordsIter(self, blockRow, blockCol):
+    # Iterator that yields coordinate objects found in the block specified with block_row, block_col
+    def __blockCellCoordsIter(self, block_row, block_col):
         for row, col in double_iter(3):
-            yield SudokuCoordinates(blockRow, blockCol, row, col)
+            yield SudokuCoordinates(block_row, block_col, row, col)
     #
     # Private Iterator Methods
     ######### END

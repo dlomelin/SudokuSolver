@@ -1,83 +1,105 @@
+'''.'''
+
 from sudoku_solver.utilities import instantiate_matrix, double_iter, number_set
 
 
 class SudokuBlock(object):
     ''' Class that represents a NxN sudoku block with N^2 cells '''
 
-    def __init__(self, numList):
+    def __init__(self, num_list):
         # Set the values to what the user passed in, which should be a list of lists
         # Ex: [['9', '7', ' '], [' ', ' ', ' '], ['5', '6', '3']]
-        self.__storeValues(numList)
+        self.__store_values(num_list)
 
         # Store data related to the data that was passed in
-        self.__storeSquareData()
+        self.__store_square_data()
 
         # Make sure the values passed in are in a valid format
-        self.__validateNumList()
+        self.__validate_num_list()
 
         # Creates new candidates for each of the N^2 cells
-        self.__createCandidateNumbers()
+        self.__create_candidate_numbers()
 
         # Remove all candidates for cells that have been assigned a number
-        self.__eliminateKnownNumbers()
-
-    # TODO pull out num list
-    #def __repr__(self):
-    #   return '%s(%s)' % (self.__class__.__name__)
+        self.__eliminate_known_numbers()
 
     def __eq__(self, other):
-        return self.__values == other.__values
+        return self.__values == other.__values  # pylint: disable=protected-access
 
     ##################
     # Public Methods #
     ##################
 
-    # Checks if every cell in the block contains a unique number.
-    # Returns True if so, False otherwise.
     def valid(self):
-        validSolution = True
-        validNums = set()
+        '''
+        Checks if every cell in the block contains a unique number.
+
+        :param:  None
+
+        :return:  Boolean
+        '''
+        valid_solution = True
+        valid_nums = set()
 
         # Iterate through each of the N^2 cells
-        for row, col in double_iter(self.__squareSize):
+        for row, col in double_iter(self.__square_size):
             # Check if there is a valid digit in the cell
-            num = self.getValue(row, col)
+            num = self.get_value(row, col)
             if num:
-                validNums.add(num)
+                valid_nums.add(num)
             else:
-                validSolution = False
+                valid_solution = False
                 break
 
         # Checks if there are N^2 unique numbers
-        if len(validNums) != self.__cellCount:
-            validSolution = False
+        if len(valid_nums) != self.__cell_count:
+            valid_solution = False
 
-        return validSolution
+        return valid_solution
 
-    # Checks if every cell in the block contains a number.
-    # Returns True if so, False otherwise.
     def complete(self):
-        allComplete = True
+        '''
+        Checks if every cell in the block contains a number.
+
+        :param:  None
+
+        :return:  Boolean
+        '''
+        all_complete = True
 
         # Iterate through each of the N^2 cells
-        for row, col in double_iter(self.__squareSize):
+        for row, col in double_iter(self.__square_size):
             # Check if the cell contains a digit
-            if not self.getValue(row, col):
-                allComplete = False
+            if not self.get_value(row, col):
+                all_complete = False
                 break
 
-        return allComplete
+        return all_complete
 
-    # Returns the assigned value for the cell if one
-    # exists; otherwise returns None
-    def getValue(self, row, col):
+    def get_value(self, row, col):
+        '''
+        Returns the assigned value for the cell if one exists; otherwise returns None
+
+        :param row:  Integer
+        :param col:  Integer
+
+        :return:  String (integer)
+        '''
         value = None
         if self.__values[row][col].isdigit():
             value = self.__values[row][col]
         return value
 
-    # Sets the number at position (row, col)
-    def setValue(self, num, row, col):
+    def set_value(self, num, row, col):
+        '''
+        Sets the number at position (row, col)
+
+        :param num:  Integer
+        :param row:  Integer
+        :param col:  Integer
+
+        :return:  None
+        '''
         self.__values[row][col] = str(num)
 
     ##
@@ -89,16 +111,38 @@ class SudokuBlock(object):
     # Candidates are represented by a set() of numbers from 1-N^2
     ##
 
-    # Returns the notes for the specified (row, col)
-    def getCandidates(self, row, col):
+    def get_candidates(self, row, col):
+        '''
+        Returns the notes for the specified (row, col)
+
+        :param row:  Integer
+        :param col:  Integer
+
+        :return:  Set of integers cast as strings
+        '''
         return self.__candidates[row][col]
 
-    # Deletes a number from a given set of notes at position (row, col)
-    def deleteCandidateNumber(self, num, row, col):
+    def delete_candidate_number(self, num, row, col):
+        '''
+        Deletes a number from a given set of notes at position (row, col)
+
+        :param num:  Integer
+        :param row:  Integer
+        :param col:  Integer
+
+        :return:  None
+        '''
         self.__candidates[row][col].discard(str(num))
 
-    # Deletes all numbers for a set of notes
-    def clearCandidates(self, row, col):
+    def clear_candidates(self, row, col):
+        '''
+        Deletes all numbers for a set of notes
+
+        :param row:  Integer
+        :param col:  Integer
+
+        :return:  None
+        '''
         self.__candidates[row][col] = set()
 
     ###################
@@ -108,55 +152,60 @@ class SudokuBlock(object):
     ###### START
     # __init__ methods
     #
-    def __storeValues(self, numList):
-        self.__values = numList
+    def __store_values(self, num_list):
+        self.__values = num_list
         for i in xrange(len(self.__values)):
             for j in xrange(len(self.__values[i])):
                 self.__values[i][j] = str(self.__values[i][j])
 
     # Stores information related to the size of the input data
-    def __storeSquareData(self):
-        self.__squareSize = len(self.__values)
-        self.__cellCount = self.__squareSize ** 2
+    def __store_square_data(self):
+        self.__square_size = len(self.__values)
+        self.__cell_count = self.__square_size ** 2
 
     # Make sure the values passed in are in a valid format
-    def __validateNumList(self):
+    def __validate_num_list(self):
         # Make sure the correct number of lists are passed in
-        listLen = len(self.__values)
-        if listLen != self.__squareSize:
-            raise Exception('Invalid number of lists passed to SudokuBlock object.  Must contain %s lists.' % (self.__squareSize))
+        list_len = len(self.__values)
+        if list_len != self.__square_size:
+            raise Exception(
+                'Invalid number of lists passed to SudokuBlock object.  '
+                'Must contain %s lists.' % (self.__square_size)
+            )
 
-        numCount = 0
-        numSet = set()
-        for itemList in self.__values:
-            itemLen = len(itemList)
-            if itemLen != self.__squareSize:
-                raise Exception('Invalid number of items passed to SudokuBlock object.  Must contain %s items.' % (self.__squareSize))
-            for num in itemList:
+        num_count = 0
+        num_set = set()
+        for item_list in self.__values:
+            item_len = len(item_list)
+            if item_len != self.__square_size:
+                raise Exception(
+                    'Invalid number of items passed to SudokuBlock object.  '
+                    'Must contain %s items.' % (self.__square_size)
+                )
+            for num in item_list:
                 if num.isdigit():
-                    numCount += 1
-                    numSet.add(num)
-        numLen = len(numSet)
-        if numLen != numCount:
+                    num_count += 1
+                    num_set.add(num)
+        num_len = len(num_set)
+        if num_len != num_count:
             raise Exception('Duplicate numbers pre-assigned to SudokuBlock object.')
 
-    # Creates new notes for each of the N^2 cells
-    def __createCandidateNumbers(self):
+    def __create_candidate_numbers(self):
+        ''' Creates new notes for each of the N^2 cells '''
         # Creates a NxN matrix.  Each cell will have its own set of notes
-        self.__candidates = instantiate_matrix(self.__squareSize)
+        self.__candidates = instantiate_matrix(self.__square_size)
 
         # Iterate through each of the N^2 cells and assign a new set of notes
-        for row, col in double_iter(self.__squareSize):
-            self.__candidates[row][col] = number_set(self.__squareSize)
+        for row, col in double_iter(self.__square_size):
+            self.__candidates[row][col] = number_set(self.__square_size)
 
     # Remove all notes for cells that have been assigned a number
-    def __eliminateKnownNumbers(self):
+    def __eliminate_known_numbers(self):
         # Iterate through each of the N^2 cells
-        for row, col in double_iter(self.__squareSize):
+        for row, col in double_iter(self.__square_size):
             # Remove all notes for the cell if it has been assigned a number
-            if self.getValue(row, col):
-                self.clearCandidates(row, col)
+            if self.get_value(row, col):
+                self.clear_candidates(row, col)
     #
     # __init__ methods
     ###### END
-
