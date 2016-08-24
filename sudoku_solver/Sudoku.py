@@ -10,19 +10,21 @@ from sudoku_solver.SudokuCoordinates import SudokuCoordinates
 
 
 class Sudoku(object):
+    ''' Class that provides interface to solving and visualizing Sudoku puzzles '''
+
     def __init__(self, **args):
 
         # Make sure one of the required arguments was passed in
-        fieldsToCheck = set(['file', 'data'])
-        self.__checkInputParameters(fieldsToCheck, args)
+        fields_to_check = set(['file', 'data'])
+        self.__check_input_arguments(fields_to_check, args)
 
         # Loads the user specified data
-        self.__loadInputData(args)
+        self.__load_input_data(args)
 
         # Mark this puzzle as unsolved
-        self.__setSolvedFalse()
+        self.__set_solved_false()
 
-        self.__techniquesUsed = {}
+        self.__techniques_used = {}
 
     ########################
     # Overloaded Operators #
@@ -67,9 +69,15 @@ class Sudoku(object):
     # Public Methods #
     ##################
 
-    # Returns a list of lists with the current grid values.
-    # Unknown positions are represented by a period.
     def gridValues(self):
+        '''
+        Returns a list of lists with the current grid values.
+        Unknown positions are represented by a period.
+
+        :param:  None
+
+        :return:  List of Lists
+        '''
         values = []
 
         for matRow, row in double_iter(3):
@@ -83,10 +91,17 @@ class Sudoku(object):
 
         return values
 
-    # Attempts to figure out the values for all cells in the sudoku grid.
     def solve(self):
+        '''
+        Attempts to figure out the values for all cells in the sudoku grid.
+
+        :param:  None
+
+        :return:  None
+        '''
+
         # Mark this puzzle as unsolved
-        self.__setSolvedFalse()
+        self.__set_solved_false()
 
         while True:
             # Mark this iteration as having no changes
@@ -118,7 +133,7 @@ class Sudoku(object):
             self.__reduceWXYZwing()
 
             # Reduce numbers based on multiple lines
-            self.__reduceMultipleLines()
+            self.__reduce_multiple_lines()
 
             if not self.__puzzleChanged():
                 break
@@ -128,9 +143,16 @@ class Sudoku(object):
         if self.complete():
             self.__checkValid()
 
-    # Checks if every cell has been filled in with a number.
-    # Does not check if the numbers are valid though.
     def complete(self):
+        '''
+        Checks if every cell has been filled in with a number.
+        Does not check if the numbers are valid though.
+
+        :param:  None
+
+        :return:  Boolean
+        '''
+
         allComplete = True
 
         # Iterate through each of the 9 blocks
@@ -142,8 +164,14 @@ class Sudoku(object):
 
         return allComplete
 
-    # Prints the current candidates used to solve the puzzle in a human readable format
     def printCandidates(self, fhOut=sys.stdout):
+        '''
+        Prints the current candidates used to solve the puzzle in a human readable format
+
+        :param fhOut:  Filehandle - Optional
+
+        :return:  None
+        '''
         candidateNums = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9']]
 
         header = 'Current Candidates'.center(len(self.__blockRowSplit()))
@@ -157,37 +185,62 @@ class Sudoku(object):
                     fhOut.write('||')
                     for block_col in xrange(3):
                         for col in xrange(3):
-                            numString = ''
-                            candidates = self.getCellCandidates(block_row, block_col, row, col)
+                            num_string = ''
+                            candidates = self.get_cell_candidates(block_row, block_col, row, col)
                             for num in candidateNums[i]:
                                 if num in candidates:
-                                    numString += '%s' % (num)
+                                    num_string += '%s' % (num)
                                 else:
-                                    numString += ' '
+                                    num_string += ' '
                             if col == 2:
-                                colSplit = '||'
+                                col_split = '||'
                             else:
-                                colSplit = '|'
-                            fhOut.write(' %s %s' % (numString, colSplit))
+                                col_split = '|'
+                            fhOut.write(' %s %s' % (num_string, col_split))
                     fhOut.write('\n')
                 if row == 2:
                     fhOut.write('%s\n' % (self.__blockRowSplit()))
                 else:
                     fhOut.write('%s\n' % (self.__rowSplit()))
 
-    # Prints out a list of techniques used and how frequently they were used
     def printTechniquesUsed(self, fhOut=sys.stdout):
+        '''
+        Prints out a list of techniques used and how frequently they were used
+
+        :param fhOut:  Filehandle - Optional
+
+        :return:  None
+        '''
+
         fhOut.write('Candidates Removed By:\n')
-        for technique in sorted(self.__techniquesUsed.keys()):
-            fhOut.write('  %s: %s\n' % (technique, self.__techniquesUsed[technique]))
+        for technique in sorted(self.__techniques_used):
+            fhOut.write('  %s: %s\n' % (technique, self.__techniques_used[technique]))
         fhOut.write('\n')
 
-    # Returns the value of a cell at the specified coordinates
     def getCellValue(self, block_row, block_col, row, col):
+        '''
+        Returns the value of a cell at the specified coordinates
+
+        :param block_row:  Integer
+        :param block_col:  Integer
+        :param row:  Integer
+        :param col:  Integer
+
+        :return:  String (integer)
+        '''
         return self.__matrix[block_row][block_col].get_value(row, col)
 
-    # Returns the set() of candidates at the specified coordinates
-    def getCellCandidates(self, block_row, block_col, row, col):
+    def get_cell_candidates(self, block_row, block_col, row, col):
+        '''
+        Returns the set() of candidates at the specified coordinates
+
+        :param block_row:  Integer
+        :param block_col:  Integer
+        :param row:  Integer
+        :param col:  Integer
+
+        :return:  Set of integers cast as strings
+        '''
         return self.__matrix[block_row][block_col].get_candidates(row, col)
 
     ###################
@@ -211,15 +264,15 @@ class Sudoku(object):
     def __puzzleSolved(self):
         return self.__solved_status
 
-    def __setSolvedFalse(self):
+    def __set_solved_false(self):
         self.__solved_status = False
 
     def __track_techniques_used(self, technique):
         if technique:
             try:
-                self.__techniquesUsed[technique] += 1
-            except:
-                self.__techniquesUsed[technique] = 1
+                self.__techniques_used[technique] += 1
+            except KeyError:
+                self.__techniques_used[technique] = 1
     #
     # instance variable setters and getters
     ###### END
@@ -269,7 +322,7 @@ class Sudoku(object):
     # one number left in the candidates, then it sets the value
     def __clearCellCandidateAndSet(self, num, block_row, block_col, row, col, techniqueUsed):
 
-        candidates = self.getCellCandidates(block_row, block_col, row, col)
+        candidates = self.get_cell_candidates(block_row, block_col, row, col)
         if num in candidates:
             self.__deleteCandidateNumber(num, block_row, block_col, row, col)
 
@@ -289,12 +342,12 @@ class Sudoku(object):
 
     # Iterate through each cell, determine which numbers have already been
     # assigned, and remove them from the list of unassigned numbers
-    def __findUnassignedNums(self, cellCoordinatesList):
+    def __findUnassignedNums(self, cell_coordinates_list):
         # Create a list of all possible numbers that can be assigned to the current set of cells
         unassignedNums = number_set(3)
 
         # Iterate through each cell's coordinates
-        for cellCoords in cellCoordinatesList:
+        for cellCoords in cell_coordinates_list:
 
             # Remove the already assigned number in the current cell
             # from the list of possible numbers
@@ -313,16 +366,16 @@ class Sudoku(object):
     def __removeCandidateSeenBy(self, num, block_row, block_col, row, col):
 
         # Remove the number from the candidates along the block
-        self.__removeCandidateByIter(
+        self.__remove_candidate_by_iter(
             num,
-            self.__blockCellCoordsIter,
+            self.__block_cell_coords_iter,
             block_row,
             block_col,
             [],
         )
 
         # Remove the number from the candidates along the row
-        self.__removeCandidateByIter(
+        self.__remove_candidate_by_iter(
             num,
             self.__rowCellCoordsIter,
             block_row,
@@ -331,18 +384,18 @@ class Sudoku(object):
         )
 
         # Remove the number from the candidates along the column
-        self.__removeCandidateByIter(
+        self.__remove_candidate_by_iter(
             num,
-            self.__colCellCoordsIter,
+            self.__col_cell_coords_iter,
             block_col,
             col,
             [],
         )
 
-    def __removeCandidateByIter(
+    def __remove_candidate_by_iter(
             self,
             num,
-            coordIter,
+            coord_iter,
             coordPos1,
             coordPos2,
             skipCoordsList,
@@ -352,7 +405,7 @@ class Sudoku(object):
         the number from the cell's candidates
         '''
         # Iterate through each cell
-        for coords in coordIter(coordPos1, coordPos2):
+        for coords in coord_iter(coordPos1, coordPos2):
 
             # Skip the cells that are the skip list
             if not self.__coordsInList(coords, skipCoordsList):
@@ -366,13 +419,14 @@ class Sudoku(object):
                     technique,
                 )
 
-    def __coordsInList(self, coords, skipList):
-        itemInList = False
-        for item in skipList:
+    @staticmethod
+    def __coordsInList(coords, skip_list):
+        item_in_list = False
+        for item in skip_list:
             if item == coords:
-                itemInList = True
+                item_in_list = True
                 break
-        return itemInList
+        return item_in_list
 
     def __coordsIntersection(self, *coordsList):
         seenCoordsList = []
@@ -394,7 +448,7 @@ class Sudoku(object):
         uniqueCoords = set()
 
         # Store all coordinates in the same block as centerCoord
-        for coord in self.__blockCellCoordsIter(centerCoord.block_row, centerCoord.block_col):
+        for coord in self.__block_cell_coords_iter(centerCoord.block_row, centerCoord.block_col):
             uniqueCoords.add(coord)
 
         # Store all coordinates in the same row as centerCoord
@@ -402,7 +456,7 @@ class Sudoku(object):
             uniqueCoords.add(coord)
 
         # Store all coordinates in the same column as centerCoord
-        for coord in self.__colCellCoordsIter(centerCoord.block_col, centerCoord.col):
+        for coord in self.__col_cell_coords_iter(centerCoord.block_col, centerCoord.col):
             uniqueCoords.add(coord)
 
         # Remove centerCoord
@@ -418,7 +472,7 @@ class Sudoku(object):
         for cellCoords in self.__coordsSeenBy(coords):
 
             # Look for cells that pass the criteria set forth by validCellFunction
-            cellCandidates = self.getCellCandidates(
+            cellCandidates = self.get_cell_candidates(
                 cellCoords.block_row,
                 cellCoords.block_col,
                 cellCoords.row,
@@ -430,14 +484,16 @@ class Sudoku(object):
 
         return coordsList, candidatesList
 
-    def __candidatesIntersection(self, *candidatesList):
+    @staticmethod
+    def __candidatesIntersection(*candidatesList):
         candidatesIntersection = candidatesList[0]
         for i in xrange(1, len(candidatesList)):
             candidatesIntersection = candidatesIntersection.intersection(candidatesList[i])
 
         return candidatesIntersection
 
-    def __candidatesUnion(self, *candidatesList):
+    @staticmethod
+    def __candidatesUnion(*candidatesList):
         candidatesUnion = candidatesList[0]
         for i in xrange(1, len(candidatesList)):
             candidatesUnion = candidatesUnion.union(candidatesList[i])
@@ -450,65 +506,67 @@ class Sudoku(object):
     ###### START
     # __init__ methods
     #
-    def __checkInputParameters(self, fieldsToCheck, args):
-        # Check if one of the required parameters was supplied
+    @staticmethod
+    def __check_input_arguments(fields_to_check, args):
+        # Check if one of the required arguments was supplied
         missingFields = True
         for field in args:
-            if field in fieldsToCheck:
+            if field in fields_to_check:
                 missingFields = False
 
         if missingFields:
             raise Exception(
                 'One of the following required fields was not provided: %s' % (
-                    ','.join(fieldsToCheck),
+                    ','.join(fields_to_check),
                 )
             )
 
     # Loads the user specified data
-    def __loadInputData(self, args):
+    def __load_input_data(self, args):
         if 'file' in args:
             # Parses file with starting Sudoku numbers and loads object
-            self.__loadFromFile(args['file'])
+            self.__load_from_file(args['file'])
         elif 'data' in args:
             # Parses list of lists with starting Sudoku numbers and loads object
-            self.__loadFromData(args['data'])
+            self.__load_from_data(args['data'])
 
-    # Loads data from a file
-    def __loadFromFile(self, file):
-        if os.path.isfile(file):
+    def __load_from_file(self, fileName):
+        ''' Loads data from a file '''
+        if os.path.isfile(fileName):
             data = []
 
             # Converts file contents into a list of lists
-            fhIn = open(file, 'rU')
+            fhIn = open(fileName, 'rU')
             for line in fhIn:
                 nums = self.__parseFileLine(line)
                 data.append(nums)
             fhIn.close()
 
             # Loads data from a list of lists
-            self.__loadFromData(data)
+            self.__load_from_data(data)
 
         else:
-            raise Exception('%s is not a valid file or does not exist.' % (file))
+            raise Exception('%s is not a valid file or does not exist.' % (fileName))
 
     # Loads data from a list of lists
-    def __loadFromData(self, data):
-        tempMatrix = instantiate_matrix(3)
+    def __load_from_data(self, data):
+        temp_matrix = instantiate_matrix(3)
         currentBlockRow = 0
 
         for nums in data:
             # Every 3 lines get incremented
-            if self.__currentBlockRowFull(tempMatrix, currentBlockRow):
+            if self.__currentBlockRowFull(temp_matrix, currentBlockRow):
                 currentBlockRow += 1
 
-            tempMatrix[currentBlockRow][0].append(nums[0:3])
-            tempMatrix[currentBlockRow][1].append(nums[3:6])
-            tempMatrix[currentBlockRow][2].append(nums[6:9])
+            temp_matrix[currentBlockRow][0].append(nums[0:3])
+            temp_matrix[currentBlockRow][1].append(nums[3:6])
+            temp_matrix[currentBlockRow][2].append(nums[6:9])
 
-        self.__instantiateSudokuMatrix(tempMatrix)
+        self.__instantiateSudokuMatrix(temp_matrix)
 
-    # Parses the line of a file into a valid list
-    def __parseFileLine(self, line):
+    @staticmethod
+    def __parseFileLine(line):
+        ''' Parses the line of a file into a valid list '''
         # Strip newline character
         line = line.strip('\n')
 
@@ -522,21 +580,19 @@ class Sudoku(object):
         # Convert to a list of numbers
         return list(line)
 
-    # Returns True if the current row of blocks are all full
-    def __currentBlockRowFull(self, matrix, block_row):
-        if len(matrix[block_row][0]) == 3 and \
+    @staticmethod
+    def __currentBlockRowFull(matrix, block_row):
+        ''' Returns True if the current row of blocks are all full '''
+        return len(matrix[block_row][0]) == 3 and \
             len(matrix[block_row][1]) == 3 and \
-            len(matrix[block_row][2]) == 3:
-            return True
-        else:
-            return False
+            len(matrix[block_row][2]) == 3
 
     # Converts the temporary matrix into one that has SudokuBlock objects
-    def __instantiateSudokuMatrix(self, tempMatrix):
+    def __instantiateSudokuMatrix(self, temp_matrix):
         self.__matrix = instantiate_matrix(3)
         # Iterate through each of the 9 blocks
         for block_row, block_col in double_iter(3):
-            self.__matrix[block_row][block_col] = SudokuBlock(tempMatrix[block_row][block_col])
+            self.__matrix[block_row][block_col] = SudokuBlock(temp_matrix[block_row][block_col])
 
         # Adjusts the candidates based on the initial values of the sudoku grid.
         self.__clearInitialCandidates()
@@ -545,10 +601,10 @@ class Sudoku(object):
     def __clearInitialCandidates(self):
 
         # Iterate through each block in the sudoku grid
-        for cellCoordinatesList in self.__blockCoordsIter():
+        for cell_coordinates_list in self.__block_coords_iter():
 
             # Iterate through each cell's coordinates
-            for cellCoords in cellCoordinatesList:
+            for cellCoords in cell_coordinates_list:
 
                 # If the cell has a number assigned then clear the block, row, and column candidates
                 num = self.getCellValue(
@@ -573,7 +629,8 @@ class Sudoku(object):
     ###### START
     # __str__ methods
     #
-    def __rowDelimeter(self):
+    @staticmethod
+    def __rowDelimeter():
         return '-------------------------'
     #
     # __str__ methods
@@ -582,10 +639,12 @@ class Sudoku(object):
     ###### START
     # printCandidates methods
     #
-    def __rowSplit(self):
+    @staticmethod
+    def __rowSplit():
         return '-----------------------------------------------------------'
 
-    def __blockRowSplit(self):
+    @staticmethod
+    def __blockRowSplit():
         return '==========================================================='
     #
     # printCandidates methods
@@ -596,21 +655,21 @@ class Sudoku(object):
     #
     def __setSingletons(self):
         # Assign singletons within rows
-        self.__setSingletonCandidates(self.__rowCoordsIter)
+        self.__setSingletonCandidates(self.__row_coords_iter)
 
         # Assign singletons within columns
-        self.__setSingletonCandidates(self.__columnCoordsIter)
+        self.__setSingletonCandidates(self.__column_coords_iter)
 
-    def __setSingletonCandidates(self, coordIter):
+    def __setSingletonCandidates(self, coord_iter):
 
         # Iterate through each line in the sudoku grid
         # The lines will be all rows or all columns, depending on what was passed
-        # to this method in coordIter
-        for cellCoordinatesList in coordIter():
+        # to this method in coord_iter
+        for cell_coordinates_list in coord_iter():
 
             # Generate list of numbers that can still be assigned to the
             # remaining cells in the row or column
-            unassignedNums = self.__findUnassignedNums(cellCoordinatesList)
+            unassignedNums = self.__findUnassignedNums(cell_coordinates_list)
 
             # Iterate through the set of unassigned numbers
             for currentValue in unassignedNums:
@@ -619,7 +678,7 @@ class Sudoku(object):
                 availableCellCoords = None
 
                 # Iterate through each cell's coordinates
-                for cellCoords in cellCoordinatesList:
+                for cellCoords in cell_coordinates_list:
 
                     # If that position was already assigned a number then skip it
                     if not self.getCellValue(
@@ -628,7 +687,7 @@ class Sudoku(object):
                             cellCoords.row,
                             cellCoords.col):
                         # Grab the set() of available values for the current cell
-                        candidates = self.getCellCandidates(
+                        candidates = self.get_cell_candidates(
                             cellCoords.block_row,
                             cellCoords.block_col,
                             cellCoords.row,
@@ -667,9 +726,9 @@ class Sudoku(object):
         technique = 'Candidate Lines'
 
         # Iterate through all sudoku grid blocks
-        for cellCoordinatesList in self.__blockCoordsIter():
+        for cell_coordinates_list in self.__block_coords_iter():
             # Create a list of all unassigned numbers and the coordinates where they are found
-            hintCoords = self.__generateHintCoords(cellCoordinatesList)
+            hintCoords = self.__generate_hint_coords(cell_coordinates_list)
 
             # Iterate through each unassigned number
             for num in hintCoords:
@@ -685,7 +744,7 @@ class Sudoku(object):
                     # remove number from the rest of the row
                     if coords1.aligns_by_row(coords2):
                         # Remove the number from the candidates along the row
-                        self.__removeCandidateByIter(
+                        self.__remove_candidate_by_iter(
                             num,
                             self.__rowCellCoordsIter,
                             coords1.block_row,
@@ -698,9 +757,9 @@ class Sudoku(object):
                     # remove number from the rest of the column
                     elif coords1.aligns_by_col(coords2):
                         # Remove the number from the candidates along the column
-                        self.__removeCandidateByIter(
+                        self.__remove_candidate_by_iter(
                             num,
-                            self.__colCellCoordsIter,
+                            self.__col_cell_coords_iter,
                             coords1.block_col,
                             coords1.col,
                             [coords1, coords2],
@@ -708,13 +767,13 @@ class Sudoku(object):
                         )
 
     # Stores the coordinates for all hint positions
-    def __generateHintCoords(self, cellCoordinatesList):
+    def __generate_hint_coords(self, cell_coordinates_list):
         hintCoords = num_dict_list(3)
 
         # Iterate through each cell's coordinates
-        for cellCoords in cellCoordinatesList:
+        for cellCoords in cell_coordinates_list:
             # Store the coordinates where all numbers are found
-            candidates = self.getCellCandidates(
+            candidates = self.get_cell_candidates(
                 cellCoords.block_row,
                 cellCoords.block_col,
                 cellCoords.row,
@@ -734,97 +793,100 @@ class Sudoku(object):
     def __reduceXwingSwordfishJellyfish(self):
 
         # 2 = Xwing  3 = Swordfish  4 = Jellyfish
-        for cellCount in xrange(2, 5):
+        for cell_count in xrange(2, 5):
             # Search for valid xwing cells along rows to reduce candidates along the columns
-            self.__reduceXwingSwordJellyRow(cellCount)
+            self.__reduceXwingSwordJellyRow(cell_count)
 
             # Search for valid xwing cells along columns to reduce candidates along the rows
-            self.__reduceXwingSwordJellyCol(cellCount)
+            self.__reduceXwingSwordJellyCol(cell_count)
 
-    def __reduceXwingSwordJellyRow(self, cellCount):
-        technique = self.__xSwordJellyTechnique(cellCount)
-        potentialCells = self.__potentialRectangleCells(cellCount, self.__rowCoordsIter)
+    def __reduceXwingSwordJellyRow(self, cell_count):
+        technique = self.__x_sword_jelly_technique(cell_count)
+        potentialCells = self.__potential_rectangle_cells(cell_count, self.__row_coords_iter)
 
         # Iterate through each number
         for num in potentialCells:
 
             # Iterate through all possible row triplets
-            for dataset in combinations(potentialCells[num], cellCount):
+            for dataset in combinations(potentialCells[num], cell_count):
 
                 # Checks if the current triplet of rows forms a valid Swordfish across 3 columns
-                if self.__validRectangleColCells(cellCount, *dataset):
+                if self.__validRectangleColCells(cell_count, *dataset):
 
                     # Iterate through the 3 affected columns
-                    for blockCoords in self.__columnsInCommon(*dataset):
+                    for block_coords in self.__columnsInCommon(*dataset):
 
                         # Remove the number from the candidates along the column,
                         # excluding the cells that make up the Swordfish
-                        self.__removeCandidateByIter(
+                        self.__remove_candidate_by_iter(
                             num,
-                            self.__colCellCoordsIter,
-                            blockCoords.block_col,
-                            blockCoords.col,
+                            self.__col_cell_coords_iter,
+                            block_coords.block_col,
+                            block_coords.col,
                             list(chain(*dataset)),
                             technique,
                         )
 
-    def __reduceXwingSwordJellyCol(self, cellCount):
-        technique = self.__xSwordJellyTechnique(cellCount)
+    def __reduceXwingSwordJellyCol(self, cell_count):
+        technique = self.__x_sword_jelly_technique(cell_count)
 
-        potentialCells = self.__potentialRectangleCells(cellCount, self.__columnCoordsIter)
+        potentialCells = self.__potential_rectangle_cells(cell_count, self.__column_coords_iter)
 
         # Iterate through each number
         for num in potentialCells:
 
-            # Iterate through all possible cellCount cells
-            for dataset in combinations(potentialCells[num], cellCount):
+            # Iterate through all possible cell_count cells
+            for dataset in combinations(potentialCells[num], cell_count):
 
                 # Checks if the current triplet of rows forms a valid Swordfish across 3 rows
-                if self.__validRectangleRowCells(cellCount, *dataset):
+                if self.__validRectangleRowCells(cell_count, *dataset):
 
                     # Iterate through the 3 affected rows
-                    for blockCoords in self.__rowsInCommon(*dataset):
+                    for block_coords in self.__rowsInCommon(*dataset):
 
                         # Remove the number from the candidates along the row, excluding the cells
                         # that make up the Swordfish
-                        self.__removeCandidateByIter(
+                        self.__remove_candidate_by_iter(
                             num,
                             self.__rowCellCoordsIter,
-                            blockCoords.block_row,
-                            blockCoords.row,
+                            block_coords.block_row,
+                            block_coords.row,
                             list(chain(*dataset)),
                             technique,
                         )
 
-    def __validRectangleRowCells(self, cellCount, *dataList):
+    @staticmethod
+    def __validRectangleRowCells(cell_count, *dataList):
 
-        rowData = DictCounter()
-        completeDataLists = True
+        row_data = DictCounter()
+        complete_data_lists = True
 
         for data in dataList:
             if not data:
-                completeDataLists = False
+                complete_data_lists = False
             for coords in data:
                 row = '%s,%s' % (coords.block_row, coords.row)
-                rowData.add(row)
+                row_data.add(row)
 
-        return rowData.keyCount() == cellCount and rowData.countsGE(2) and completeDataLists
+        return row_data.key_count() == cell_count and row_data.counts_ge(2) and complete_data_lists
 
-    def __validRectangleColCells(self, cellCount, *dataList):
+    @staticmethod
+    def __validRectangleColCells(cell_count, *dataList):
 
-        colData = DictCounter()
-        completeDataLists = True
+        col_data = DictCounter()
+        complete_data_lists = True
 
         for data in dataList:
             if not data:
-                completeDataLists = False
+                complete_data_lists = False
             for coords in data:
                 col = '%s,%s' % (coords.block_col, coords.col)
-                colData.add(col)
+                col_data.add(col)
 
-        return colData.keyCount() == cellCount and colData.countsGE(2) and completeDataLists
+        return col_data.key_count() == cell_count and col_data.counts_ge(2) and complete_data_lists
 
-    def __rowsInCommon(self, *dataList):
+    @staticmethod
+    def __rowsInCommon(*dataList):
         rowSet = set()
 
         for data in dataList:
@@ -833,7 +895,8 @@ class Sudoku(object):
 
         return rowSet
 
-    def __columnsInCommon(self, *dataList):
+    @staticmethod
+    def __columnsInCommon(*dataList):
         colSet = set()
 
         for data in dataList:
@@ -842,22 +905,22 @@ class Sudoku(object):
 
         return colSet
 
-    # Search all rows/columns for cells that have between 2 and cellCount candidates
-    # cellCount is dependent on the technique.  This method is used in the xwing,
+    # Search all rows/columns for cells that have between 2 and cell_count candidates
+    # cell_count is dependent on the technique.  This method is used in the xwing,
     # swordfish, jellyfish type puzzles
-    def __potentialRectangleCells(self, cellCount, coordIter):
+    def __potential_rectangle_cells(self, cell_count, coord_iter):
 
         potentialCells = num_dict_list(3)
 
         # Iterate through each row/cell in the sudoku grid
-        for cellCoordinatesList in coordIter():
+        for cell_coordinates_list in coord_iter():
             hintCoords = num_dict_list(3)
 
             # Iterate through each cell's coordinates
-            for cellCoords in cellCoordinatesList:
+            for cellCoords in cell_coordinates_list:
 
                 # Loop through all candidates in the current cell
-                candidates = self.getCellCandidates(
+                candidates = self.get_cell_candidates(
                     cellCoords.block_row,
                     cellCoords.block_col,
                     cellCoords.row,
@@ -867,23 +930,24 @@ class Sudoku(object):
                     # Store the current coordinates
                     hintCoords[num].append(cellCoords)
 
-            # Keep only the cells that have between 2 and cellCount candidates left in the row/col
+            # Keep only the cells that have between 2 and cell_count candidates left in the row/col
             for num in hintCoords:
-                if 2 <= len(hintCoords[num]) <= cellCount:
+                if 2 <= len(hintCoords[num]) <= cell_count:
                     potentialCells[num].append(hintCoords[num])
 
         return potentialCells
 
-    def __xSwordJellyTechnique(self, cellCount):
+    @staticmethod
+    def __x_sword_jelly_technique(cell_count):
         techniques = {
             2: 'X-Wing',
             3: 'Sword-Fish',
             4: 'Jelly-Fish',
         }
         try:
-            return techniques[cellCount]
+            return techniques[cell_count]
         except:
-            raise Exception('Invalid  size used: %s.  Please modify code' % (cellCount))
+            raise Exception('Invalid  size used: %s.  Please modify code' % (cell_count))
     #
     # __reduceXwingSwordfishJellyfish methods
     ###### END
@@ -893,26 +957,26 @@ class Sudoku(object):
     #
     def __reduceNakedSets(self):
         # Reduce naked sets by row
-        self.__findNakedSets(self.__rowCoordsIter)
+        self.__findNakedSets(self.__row_coords_iter)
 
         # Reduce naked sets by column
-        self.__findNakedSets(self.__columnCoordsIter)
+        self.__findNakedSets(self.__column_coords_iter)
 
         # Reduce naked sets by block
-        self.__findNakedSets(self.__blockCoordsIter)
+        self.__findNakedSets(self.__block_coords_iter)
 
-    def __findNakedSets(self, coordIter):
+    def __findNakedSets(self, coord_iter):
 
         # Iterate through each row/column/block in the sudoku grid
-        for cellCoordinatesList in coordIter():
+        for cell_coordinates_list in coord_iter():
             candidateCoords = []
             candidateList = []
 
             # Iterate through each cell's coordinates
-            for cellCoords in cellCoordinatesList:
+            for cellCoords in cell_coordinates_list:
 
                 # Store the cell's coordinates and candidates
-                candidates = self.getCellCandidates(
+                candidates = self.get_cell_candidates(
                     cellCoords.block_row,
                     cellCoords.block_col,
                     cellCoords.row,
@@ -930,7 +994,7 @@ class Sudoku(object):
                     setSize,
                     candidateList,
                     candidateCoords,
-                    cellCoordinatesList,
+                    cell_coordinates_list,
                 )
 
     # Finds all valid naked sets.  If any are found, remove the numbers that are found in the naked
@@ -940,7 +1004,7 @@ class Sudoku(object):
             setSize,
             candidateList,
             candidateCoords,
-            cellCoordinatesList):
+            cell_coordinates_list):
         technique = self.__nakedSetTechnique(setSize)
 
         # Generates a list with all combinations of size setSize.
@@ -966,9 +1030,10 @@ class Sudoku(object):
                 for num in uniqueCandidates:
 
                     # Iterate through each cell in the current row/column/block
-                    for coords in cellCoordinatesList:
+                    for coords in cell_coordinates_list:
 
-                        # Skip the cells that are in the skip list, cells that made up the naked set)
+                        # Skip the cells that are in the skip list
+                        # (cells that made up the naked set)
                         if not self.__coordsInList(coords, skipCoordsList):
 
                             # Remove the numbers from the cell candidates
@@ -981,16 +1046,18 @@ class Sudoku(object):
                                 technique,
                             )
 
-    # Generate a set of the unique candidates in candidateList
-    def __combineCandidates(self, setList, coords):
+    @staticmethod
+    def __combineCandidates(setList, coords):
+        ''' Generate a set of the unique candidates in candidateList '''
         uniqueCandidates = set()
         for indexNum in coords:
             for num in list(setList[indexNum]):
                 uniqueCandidates.add(num)
         return uniqueCandidates
 
-    # Returns the technique name for a given setSize
-    def __nakedSetTechnique(self, setSize):
+    @staticmethod
+    def __nakedSetTechnique(setSize):
+        ''' Returns the technique name for a given setSize '''
         techniques = {
             2: 'Naked Pairs',
             3: 'Naked Trios',
@@ -1010,10 +1077,10 @@ class Sudoku(object):
     def __reduceYwing(self):
 
         # Iterate through each row in the sudoku grid
-        for cellCoordinatesList in self.__rowCoordsIter():
+        for cell_coordinates_list in self.__row_coords_iter():
 
             # Iterate through each cell's coordinates
-            for cellCoords in cellCoordinatesList:
+            for cellCoords in cell_coordinates_list:
 
                 # Perform Y wing technique
                 self.__findPotentialYwing(cellCoords)
@@ -1023,7 +1090,7 @@ class Sudoku(object):
         technique = 'Y-Wing'
 
         # Look for a pivot cell that has 2 unknown candidates
-        pivotCellCandidates = self.getCellCandidates(
+        pivotCellCandidates = self.get_cell_candidates(
             coords.block_row,
             coords.block_col,
             coords.row,
@@ -1066,7 +1133,8 @@ class Sudoku(object):
                                 technique,
                             )
 
-    def __validYCell(self, pivotCellCandidates, cellCandidates):
+    @staticmethod
+    def __validYCell(pivotCellCandidates, cellCandidates):
         '''
         Looks for a cell that has 2 candidate numbers and shares
         exactly 1 candidate between itself and the pivot cell
@@ -1083,10 +1151,10 @@ class Sudoku(object):
     def __reduceXYZwing(self):
 
         # Iterate through each row in the sudoku grid
-        for cellCoordinatesList in self.__rowCoordsIter():
+        for cell_coordinates_list in self.__row_coords_iter():
 
             # Iterate through each cell's coordinates
-            for cellCoords in cellCoordinatesList:
+            for cellCoords in cell_coordinates_list:
 
                 # Perform XYZ wing technique
                 self.__findPotentialXYZwing(cellCoords)
@@ -1095,7 +1163,7 @@ class Sudoku(object):
         technique = 'XYZ-Wing'
 
         # Look for a pivot point that has 3 unknown candidates
-        pivotCellCandidates = self.getCellCandidates(
+        pivotCellCandidates = self.get_cell_candidates(
             coords.block_row,
             coords.block_col,
             coords.row,
@@ -1144,9 +1212,12 @@ class Sudoku(object):
                             technique,
                         )
 
-    # Look for cells that have 2 unknown candidates that are all found
-    # within the pivot cell
-    def __validXYZCell(self, pivotCellCandidates, cellCandidates):
+    @staticmethod
+    def __validXYZCell(pivotCellCandidates, cellCandidates):
+        '''
+        Look for cells that have 2 unknown candidates that are all found
+        within the pivot cell
+        '''
         return len(cellCandidates) == 2 and cellCandidates.issubset(pivotCellCandidates)
     #
     # __reduceXYZwing methods
@@ -1158,10 +1229,10 @@ class Sudoku(object):
     def __reduceWXYZwing(self):
 
         # Iterate through each row in the sudoku grid
-        for cellCoordinatesList in self.__rowCoordsIter():
+        for cell_coordinates_list in self.__row_coords_iter():
 
             # Iterate through each cell's coordinates
-            for cellCoords in cellCoordinatesList:
+            for cellCoords in cell_coordinates_list:
 
                 # Perform WXYZ wing technique
                 self.__findPotentialWXYZwing(cellCoords)
@@ -1169,7 +1240,7 @@ class Sudoku(object):
     def __findPotentialWXYZwing(self, coords):
         technique = 'WXYZ-Wing'
 
-        pivotCellCandidates = self.getCellCandidates(
+        pivotCellCandidates = self.get_cell_candidates(
             coords.block_row,
             coords.block_col,
             coords.row,
@@ -1228,7 +1299,8 @@ class Sudoku(object):
                             technique,
                         )
 
-    def __findNonRestrictedCandidate(self, candidatesList, coordsList):
+    @staticmethod
+    def __findNonRestrictedCandidate(candidatesList, coordsList):
         candidateSet = set()
 
         # Iterate through each pair of cells
@@ -1250,7 +1322,8 @@ class Sudoku(object):
         else:
             return None
 
-    def __validWXYZCell(self, pivotCellCandidates, cellCandidates):
+    @staticmethod
+    def __validWXYZCell(pivotCellCandidates, cellCandidates):
         ''' Look for cells that have candidates and at least 1 number in common '''
         return len(cellCandidates) >= 2 and \
             len(cellCandidates.intersection(pivotCellCandidates)) >= 1
@@ -1259,27 +1332,27 @@ class Sudoku(object):
     ###### END
 
     ###### START
-    # __reduceMultipleLines methods
+    # __reduce_multiple_lines methods
     #
-    def __reduceMultipleLines(self):
+    def __reduce_multiple_lines(self):
         technique = 'Multiple Lines'
         # Iterate through each block
-        for cellCoordinatesList in self.__blockCoordsIter():
+        for cell_coordinates_list in self.__block_coords_iter():
 
             # Extract the current block coordinates
-            block_row = cellCoordinatesList[0].block_row
-            block_col = cellCoordinatesList[0].block_col
+            block_row = cell_coordinates_list[0].block_row
+            block_col = cell_coordinates_list[0].block_col
 
             # Generate list of numbers that can still be assigned to the
             # remaining cells in the row or column
-            unassignedNums = self.__findUnassignedNums(cellCoordinatesList)
+            unassignedNums = self.__findUnassignedNums(cell_coordinates_list)
 
             # Look for rows/columns that share the unassigned number in pairs of rows
             for num in unassignedNums:
 
                 # Identify the rows in the current block that can
                 # have the number eliminated from the candidates
-                sharedRows = self.__findSharedLinesByRow(num, block_row, block_col)
+                sharedRows = self.__find_shared_lines_by_row(num, block_row, block_col)
                 if sharedRows:
 
                     # Remove the number from the cell's candidates
@@ -1296,11 +1369,11 @@ class Sudoku(object):
 
                 # Identify the columns in the current block that can
                 # have the number eliminated from the candidates
-                sharedCols = self.__findSharedLinesByCol(num, block_row, block_col)
-                if sharedCols:
+                shared_cols = self.__find_shared_lines_by_col(num, block_row, block_col)
+                if shared_cols:
 
                     # Remove the number from the cell's candidates
-                    for col in sharedCols:
+                    for col in shared_cols:
                         for row in xrange(3):
                             self.__clearCellCandidateAndSet(
                                 num,
@@ -1311,63 +1384,63 @@ class Sudoku(object):
                                 technique,
                             )
 
-    def __findSharedLinesByRow(self, num, block_row, block_col):
+    def __find_shared_lines_by_row(self, num, block_row, block_col):
         '''
         Identify the rows in the current block that can
         have the number eliminated from the candidates
         '''
         sharedRows = set()
-        affectedBlocks = set()
+        affected_blocks = set()
 
         # Iterate through the remaining columns except for the starting one
-        for blockColLoop in filter(lambda x: x != block_col, xrange(3)):
+        for blockColLoop in [x for x in xrange(3) if x != block_col]:
 
             # Iterate through each cell in the block
             for row, col in double_iter(3):
 
                 # Check the cell's candidates if num can be placed here.
                 # If it can, track the row and block
-                candidates = self.getCellCandidates(block_row, blockColLoop, row, col)
+                candidates = self.get_cell_candidates(block_row, blockColLoop, row, col)
                 if num in candidates:
                     sharedRows.add(row)
-                    affectedBlocks.add(blockColLoop)
+                    affected_blocks.add(blockColLoop)
 
         # Criteria for the multiple lines technique is that there are 2 shared rows
         # across 2 blocks with the same number.
-        if len(sharedRows) == 2 and len(affectedBlocks) == 2:
+        if len(sharedRows) == 2 and len(affected_blocks) == 2:
             return sharedRows
         else:
             return set()
 
-    def __findSharedLinesByCol(self, num, block_row, block_col):
+    def __find_shared_lines_by_col(self, num, block_row, block_col):
         '''
         Identify the columns in the current block that can
         have the number eliminated from the candidates
         '''
-        sharedCols = set()
-        affectedBlocks = set()
+        shared_cols = set()
+        affected_blocks = set()
 
         # Iterate through the remaining rows except for the starting one
-        for blockRowLoop in filter(lambda x: x != block_row, xrange(3)):
+        for blockRowLoop in [x for x in xrange(3) if x != block_row]:
 
             # Iterate through each cell in the block
             for row, col in double_iter(3):
 
                 # Check the cell's candidates if num can be placed here.
                 # If it can, track the column and block
-                candidates = self.getCellCandidates(blockRowLoop, block_col, row, col)
+                candidates = self.get_cell_candidates(blockRowLoop, block_col, row, col)
                 if num in candidates:
-                    sharedCols.add(col)
-                    affectedBlocks.add(blockRowLoop)
+                    shared_cols.add(col)
+                    affected_blocks.add(blockRowLoop)
 
         # Criteria for the multiple lines technique is that there are 2 shared columns
         # across 2 blocks with the same number.
-        if len(sharedCols) == 2 and len(affectedBlocks) == 2:
-            return sharedCols
+        if len(shared_cols) == 2 and len(affected_blocks) == 2:
+            return shared_cols
         else:
             return set()
     #
-    # __reduceMultipleLines methods
+    # __reduce_multiple_lines methods
     ###### END
 
     ###### START
@@ -1375,27 +1448,27 @@ class Sudoku(object):
     #
     def __checkValid(self):
         # Check valid cells by row
-        self.__checkValidCells(self.__rowCoordsIter, 'Rows')
+        self.__checkValidCells(self.__row_coords_iter, 'Rows')
 
         # Check valid cells by column
-        self.__checkValidCells(self.__columnCoordsIter, 'Columns')
+        self.__checkValidCells(self.__column_coords_iter, 'Columns')
 
         # Check valid cells by block
-        self.__checkValidCells(self.__blockCoordsIter, 'Blocks')
+        self.__checkValidCells(self.__block_coords_iter, 'Blocks')
 
         # The previous method calls will raise Exceptions if the completed grid is invalid
         # so if it gets here, then the puzzle is valid and solved
         self.__setSolvedTrue()
 
     # Makes sure there are 9 unique elements in the iterator
-    def __checkValidCells(self, coordIter, iterType):
+    def __checkValidCells(self, coord_iter, iterType):
 
         # Iterate through each row/column/block in the sudoku grid
-        for cellCoordinatesList in coordIter():
+        for cell_coordinates_list in coord_iter():
             validNums = set()
 
             # Iterate through each cell's coordinates
-            for cellCoords in cellCoordinatesList:
+            for cellCoords in cell_coordinates_list:
                 num = self.getCellValue(
                     cellCoords.block_row,
                     cellCoords.block_col,
@@ -1434,15 +1507,18 @@ class Sudoku(object):
     # The iterator would yield the following 3 lists, where the contents of each
     # list are coordinate objects for each cell.
     # [1, 2, 3], [4, 5, 6], [7, 8, 9]
-    def __rowCoordsIter(self):
+    def __row_coords_iter(self):
         for block_row, row in double_iter(3):
             rowCoords = []
             for coords in self.__rowCellCoordsIter(block_row, row):
                 rowCoords.append(coords)
             yield rowCoords
 
-    # Iterator that yields coordinate objects found in the row specified with block_row, row
-    def __rowCellCoordsIter(self, block_row, row):
+    @staticmethod
+    def __rowCellCoordsIter(block_row, row):
+        '''
+        Iterator that yields coordinate objects found in the row specified with block_row, row
+        '''
         for block_col, col in double_iter(3):
             yield SudokuCoordinates(block_row, block_col, row, col)
 
@@ -1457,15 +1533,19 @@ class Sudoku(object):
     # The iterator would yield the following 3 lists, where the contents of each
     # list are coordinate objects for each cell.
     # [1, 4, 7], [2, 5, 8], [3, 6, 9]
-    def __columnCoordsIter(self):
+    def __column_coords_iter(self):
         for block_col, col in double_iter(3):
-            colCoords = []
-            for coords in self.__colCellCoordsIter(block_col, col):
-                colCoords.append(coords)
-            yield colCoords
+            col_coords = []
+            for coords in self.__col_cell_coords_iter(block_col, col):
+                col_coords.append(coords)
+            yield col_coords
 
-    # Iterator that yields coordinate objects found in the column specified with block_col, col
-    def __colCellCoordsIter(self, block_col, col):
+    @staticmethod
+    def __col_cell_coords_iter(block_col, col):
+        '''
+        Iterator that yields coordinate objects found
+        in the column specified with block_col, col
+        '''
         for block_row, row in double_iter(3):
             yield SudokuCoordinates(block_row, block_col, row, col)
 
@@ -1482,38 +1562,66 @@ class Sudoku(object):
     # The iterator would yield the following 4 lists, where the contents of each
     # list are coordinate objects for each cell.
     # [1, 2, 5, 6], [3, 4, 7, 8], [9, 0, $, %], [*, @, ^, &]
-    def __blockCoordsIter(self):
+    def __block_coords_iter(self):
         for block_row, block_col in double_iter(3):
-            blockCoords = []
-            for coords in self.__blockCellCoordsIter(block_row, block_col):
-                blockCoords.append(coords)
-            yield blockCoords
+            block_coords = []
+            for coords in self.__block_cell_coords_iter(block_row, block_col):
+                block_coords.append(coords)
+            yield block_coords
 
-    # Iterator that yields coordinate objects found in the block specified with block_row, block_col
-    def __blockCellCoordsIter(self, block_row, block_col):
+    @staticmethod
+    def __block_cell_coords_iter(block_row, block_col):
+        '''
+        Iterator that yields coordinate objects found in
+        the block specified with block_row, block_col
+        '''
         for row, col in double_iter(3):
             yield SudokuCoordinates(block_row, block_col, row, col)
     #
     # Private Iterator Methods
     ######### END
 
+
 class DictCounter(object):
+    ''' Special counter for dictionary elements '''
+
     def __init__(self):
         self.__counts = {}
 
-    def countsGE(self, size):
+    def counts_ge(self, size):
+        '''
+        Determines if all keys in the dictionary are greater than or equal to size
+
+        :param size:  Integer
+
+        :return:  Boolean
+        '''
         status = True
-        for key in self.__counts.keys():
+        for key in self.__counts:
             if self.__counts[key] < size:
                 status = False
                 break
         return status
 
     def add(self, key):
+        '''
+        Increases the counter for key by 1
+
+        :param key:  String - A dictionary key
+
+        :return:  None
+        '''
         try:
             self.__counts[key] += 1
-        except:
+        except KeyError:
             self.__counts[key] = 1
 
-    def keyCount(self):
+    def key_count(self):
+        '''
+        Returns the total number of keys in the dictionary
+
+        :param:  None
+
+        :return:  Integer - The number of elements in the dictionary
+        '''
         return len(self.__counts)
