@@ -177,26 +177,25 @@ class Sudoku(object):
         header = 'Current Candidates'.center(len(self.__blockRowSplit()))
 
         fhOut.write('%s\n' % (header))
-        for block_row in xrange(3):
+        for block_row in xrange(3):  # pylint: disable=too-many-nested-blocks
             if block_row == 0:
                 fhOut.write('%s\n' % (self.__blockRowSplit()))
             for row in xrange(3):
                 for i in xrange(len(candidateNums)):
                     fhOut.write('||')
-                    for block_col in xrange(3):
-                        for col in xrange(3):
-                            num_string = ''
-                            candidates = self.get_cell_candidates(block_row, block_col, row, col)
-                            for num in candidateNums[i]:
-                                if num in candidates:
-                                    num_string += '%s' % (num)
-                                else:
-                                    num_string += ' '
-                            if col == 2:
-                                col_split = '||'
+                    for block_col, col in double_iter(3):
+                        num_string = ''
+                        candidates = self.get_cell_candidates(block_row, block_col, row, col)
+                        for num in candidateNums[i]:
+                            if num in candidates:
+                                num_string += '%s' % (num)
                             else:
-                                col_split = '|'
-                            fhOut.write(' %s %s' % (num_string, col_split))
+                                num_string += ' '
+                        if col == 2:
+                            col_split = '||'
+                        else:
+                            col_split = '|'
+                        fhOut.write(' %s %s' % (num_string, col_split))
                     fhOut.write('\n')
                 if row == 2:
                     fhOut.write('%s\n' % (self.__blockRowSplit()))
@@ -665,7 +664,7 @@ class Sudoku(object):
         # Iterate through each line in the sudoku grid
         # The lines will be all rows or all columns, depending on what was passed
         # to this method in coord_iter
-        for cell_coordinates_list in coord_iter():
+        for cell_coordinates_list in coord_iter():  # pylint: disable=too-many-nested-blocks
 
             # Generate list of numbers that can still be assigned to the
             # remaining cells in the row or column
