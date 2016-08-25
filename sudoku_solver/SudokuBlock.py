@@ -149,9 +149,6 @@ class SudokuBlock(object):
     # Private Methods #
     ###################
 
-    ###### START
-    # __init__ methods
-    #
     def __store_values(self, num_list):
         self.__values = num_list
         for i in xrange(len(self.__values)):
@@ -199,13 +196,10 @@ class SudokuBlock(object):
         for row, col in double_iter(self.__square_size):
             self.__candidates[row][col] = number_set(self.__square_size)
 
-    # Remove all notes for cells that have been assigned a number
     def __eliminate_known_numbers(self):
+        ''' Remove all notes for cells that have been assigned a number '''
         # Iterate through each of the N^2 cells
         for row, col in double_iter(self.__square_size):
             # Remove all notes for the cell if it has been assigned a number
             if self.get_value(row, col):
                 self.clear_candidates(row, col)
-    #
-    # __init__ methods
-    ###### END

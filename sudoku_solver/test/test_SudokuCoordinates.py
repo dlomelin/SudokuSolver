@@ -1,6 +1,7 @@
 import unittest
 from sudoku_solver.SudokuCoordinates import SudokuCoordinates
 
+
 class TestSudokuBlock(unittest.TestCase):
     def setUp(self):
         pass

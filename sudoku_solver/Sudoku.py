@@ -246,14 +246,11 @@ class Sudoku(object):
     # Private Methods #
     ###################
 
-    ###### START
-    # Instance variable setters and getters
-    #
     def __puzzle_changed(self):
         return self.__change_status
 
-    # Lets the solver know changes were made
     def __set_change_true(self, technique_used):
+        ''' Lets the solver know changes were made '''
         self.__change_status = True  # pylint: disable=attribute-defined-outside-init
         self.__track_techniques_used(technique_used)
 
@@ -272,13 +269,7 @@ class Sudoku(object):
                 self.__techniques_used[technique] += 1
             except KeyError:
                 self.__techniques_used[technique] = 1
-    #
-    # instance variable setters and getters
-    ###### END
 
-    ###### START
-    # Wrappers around SudokuBlock methods
-    #
     def __delete_candidate_number(  # pylint: disable=too-many-arguments
             self,
             num,
@@ -298,8 +289,8 @@ class Sudoku(object):
         ''' Sets the value of the specified cell '''
         self.__matrix[block_row][block_col].set_value(num, row, col)
 
-    # Clears out available candidates from the specified cell
     def __clear_cell_candidates(self, block_row, block_col, row, col):
+        ''' Clears out available candidates from the specified cell '''
         self.__matrix[block_row][block_col].clear_candidates(row, col)
 
     def __valid_block(self, block_row, block_col):
@@ -307,15 +298,7 @@ class Sudoku(object):
 
     def __complete_block(self, block_row, block_col):
         return self.__matrix[block_row][block_col].complete()
-    #
-    # Wrappers around SudokuBlock methods
-    ###### END
 
-    ###### START
-    # Shared methods
-    #
-    # Sets the value of the specified cell and adjusts the candidates in the
-    # necessary row, column, and block.
     def __set_value(  # pylint: disable=too-many-arguments
             self,
             num,
@@ -324,6 +307,10 @@ class Sudoku(object):
             row,
             col,
             technique_used=None):
+        '''
+        Sets the value of the specified cell and adjusts the candidates in the
+        necessary row, column, and block.
+        '''
 
         # Sets the value of the specified cell
         self.__set_cell_value(num, block_row, block_col, row, col)
@@ -368,9 +355,12 @@ class Sudoku(object):
                 # Let the solver know changes were made
                 self.__set_change_true(technique_used)
 
-    # Iterate through each cell, determine which numbers have already been
-    # assigned, and remove them from the list of unassigned numbers
     def __find_unassigned_nums(self, cell_coordinates_list):
+        '''
+        Iterate through each cell, determine which numbers have already been
+        assigned, and remove them from the list of unassigned numbers
+        '''
+
         # Create a list of all possible numbers that can be assigned to the current set of cells
         unassigned_nums = number_set(3)
 
@@ -533,13 +523,7 @@ class Sudoku(object):
             candidates_union = candidates_union.union(candidates_list[i])
 
         return candidates_union
-    #
-    # Shared methods
-    ###### END
 
-    ###### START
-    # __init__ methods
-    #
     @staticmethod
     def __check_input_arguments(fields_to_check, args):
         # Check if one of the required arguments was supplied
@@ -657,23 +641,11 @@ class Sudoku(object):
                         cell_coords.row,
                         cell_coords.col,
                     )
-    #
-    # __init__ methods
-    ###### END
 
-    ###### START
-    # __str__ methods
-    #
     @staticmethod
     def __row_delimeter():
         return '-------------------------'
-    #
-    # __str__ methods
-    ###### END
 
-    ###### START
-    # print_candidates methods
-    #
     @staticmethod
     def __row_split():
         return '-----------------------------------------------------------'
@@ -681,13 +653,7 @@ class Sudoku(object):
     @staticmethod
     def __block_row_split():
         return '==========================================================='
-    #
-    # print_candidates methods
-    ###### END
 
-    ###### START
-    # __set_singletons methods
-    #
     def __set_singletons(self):
         # Assign singletons within rows
         self.__set_singleton_candidates(self.__row_coords_iter)
@@ -748,16 +714,12 @@ class Sudoku(object):
                         available_cell_coords.row,
                         available_cell_coords.col,
                     )
-    #
-    # __set_singletons methods
-    ###### END
 
-    ###### START
-    # __reduce_candidate_lines methods
-    #
-    # Reduce numbers based on lone hint pairs lying along the same row or column within 1 block.
-    # Removes the number along the same row or column but in neighboring blocks.
     def __reduce_candidate_lines(self):
+        '''
+        Reduce numbers based on lone hint pairs lying along the same row or column within 1 block.
+        Removes the number along the same row or column but in neighboring blocks.
+        '''
         technique = 'Candidate Lines'
 
         # Iterate through all sudoku grid blocks
@@ -818,13 +780,7 @@ class Sudoku(object):
                 hint_coords[num].append(cell_coords)
 
         return hint_coords
-    #
-    # __reduce_candidate_lines methods
-    ###### END
 
-    ###### START
-    # __reduce_xwing_sword_jelly_fish methods
-    #
     def __reduce_xwing_sword_jelly_fish(self):
 
         # 2 = Xwing  3 = Swordfish  4 = Jellyfish
@@ -940,10 +896,12 @@ class Sudoku(object):
 
         return col_set
 
-    # Search all rows/columns for cells that have between 2 and cell_count candidates
-    # cell_count is dependent on the technique.  This method is used in the xwing,
-    # swordfish, jellyfish type puzzles
     def __potential_rectangle_cells(self, cell_count, coord_iter):
+        '''
+        Search all rows/columns for cells that have between 2 and cell_count candidates
+        cell_count is dependent on the technique.  This method is used in the xwing,
+        swordfish, jellyfish type puzzles
+        '''
 
         potential_cells = num_dict_list(3)
 
@@ -983,13 +941,7 @@ class Sudoku(object):
             return techniques[cell_count]
         except:
             raise Exception('Invalid  size used: %s.  Please modify code' % (cell_count))
-    #
-    # __reduce_xwing_sword_jelly_fish methods
-    ###### END
 
-    ###### START
-    # __reduce_naked_sets methods
-    #
     def __reduce_naked_sets(self):
         # Reduce naked sets by row
         self.__find_naked_sets(self.__row_coords_iter)
@@ -1032,14 +984,16 @@ class Sudoku(object):
                     cell_coordinates_list,
                 )
 
-    # Finds all valid naked sets.  If any are found, remove the numbers that are found in the naked
-    # sets from all remaining neighboring cells.
     def __find_naked_set_combinations(
             self,
             set_size,
             candidate_list,
             candidate_coords,
             cell_coordinates_list):
+        '''
+        Finds all valid naked sets.  If any are found, remove the numbers that are found in the
+        naked sets from all remaining neighboring cells.
+        '''
         technique = self.__naked_set_technique(set_size)
 
         # Generates a list with all combinations of size set_size.
@@ -1102,13 +1056,7 @@ class Sudoku(object):
             return techniques[set_size]
         except:
             raise Exception('Invalid naked set size used: %s.  Please modify code' % (set_size))
-    #
-    # __reduce_naked_sets methods
-    ###### END
 
-    ###### START
-    # __reduce_ywing methods
-    #
     def __reduce_ywing(self):
 
         # Iterate through each row in the sudoku grid
@@ -1120,8 +1068,8 @@ class Sudoku(object):
                 # Perform Y wing technique
                 self.__find_potential_ywing(cell_coords)
 
-    # Performs the Y wing technique
     def __find_potential_ywing(self, coords):
+        ''' Performs the Y wing technique '''
         technique = 'Y-Wing'
 
         # Look for a pivot cell that has 2 unknown candidates
@@ -1154,7 +1102,7 @@ class Sudoku(object):
                 )
                 if len(common_set) == 1:
                     remove_num = common_set.pop()
-                    if not remove_num in pivot_cell_candidates:
+                    if remove_num not in pivot_cell_candidates:
                         remove_coords = self.__coords_intersection(
                             coords_list[index_list[0]],
                             coords_list[index_list[1]],
@@ -1178,13 +1126,7 @@ class Sudoku(object):
         '''
         return len(cell_candidates) == 2 and \
             len(cell_candidates.intersection(pivot_cell_candidates)) == 1
-    #
-    # __reduce_ywing methods
-    ###### END
 
-    ###### START
-    # __reduce_xyz_wing methods
-    #
     def __reduce_xyz_wing(self):
 
         # Iterate through each row in the sudoku grid
@@ -1256,13 +1198,7 @@ class Sudoku(object):
         within the pivot cell
         '''
         return len(cell_candidates) == 2 and cell_candidates.issubset(pivot_cell_candidates)
-    #
-    # __reduce_xyz_wing methods
-    ###### END
 
-    ###### START
-    # __reduce_wxyz_wing methods
-    #
     def __reduce_wxyz_wing(self):
 
         # Iterate through each row in the sudoku grid
@@ -1315,7 +1251,7 @@ class Sudoku(object):
                     ],
                 )
 
-                if not remove_num is None:
+                if remove_num is not None:
 
                     coords_for_intersection = []
                     if remove_num in pivot_cell_candidates:
@@ -1345,8 +1281,8 @@ class Sudoku(object):
 
             # Look for cells that can't see each other
             if not coords_list[index_list[0]].aligns_by_row(coords_list[index_list[1]]) and \
-                not coords_list[index_list[0]].aligns_by_col(coords_list[index_list[1]]) and \
-                not coords_list[index_list[0]].aligns_by_block(coords_list[index_list[1]]):
+                    not coords_list[index_list[0]].aligns_by_col(coords_list[index_list[1]]) and \
+                    not coords_list[index_list[0]].aligns_by_block(coords_list[index_list[1]]):
 
                 # Look for the numbers shared in common between both cells
                 intersection_set = candidates_list[index_list[0]].intersection(
@@ -1364,13 +1300,7 @@ class Sudoku(object):
         ''' Look for cells that have candidates and at least 1 number in common '''
         return len(cell_candidates) >= 2 and \
             len(cell_candidates.intersection(pivot_cell_candidates)) >= 1
-    #
-    # __reduce_wxyz_wing methods
-    ###### END
 
-    ###### START
-    # __reduce_multiple_lines methods
-    #
     def __reduce_multiple_lines(self):
         technique = 'Multiple Lines'
         # Iterate through each block
@@ -1476,13 +1406,7 @@ class Sudoku(object):
             return shared_cols
         else:
             return set()
-    #
-    # __reduce_multiple_lines methods
-    ###### END
 
-    ###### START
-    # __check_valid methods
-    #
     def __check_valid(self):
         # Check valid cells by row
         self.__check_valid_cells(self.__row_coords_iter, 'Rows')
@@ -1523,11 +1447,8 @@ class Sudoku(object):
 
     def __set_solved_true(self):
         self.__solved_status = True  # pylint: disable=attribute-defined-outside-init
-    #
-    # __check_valid methods
-    ###### END
 
-    ######### START
+    ##
     # Private Iterator Methods
     # The following iterators are helpful for traversing the sudoku
     # grid's cells.  They yield the coordinates for the cells that
@@ -1544,6 +1465,7 @@ class Sudoku(object):
     # The iterator would yield the following 3 lists, where the contents of each
     # list are coordinate objects for each cell.
     # [1, 2, 3], [4, 5, 6], [7, 8, 9]
+    ##
     def __row_coords_iter(self):
         for block_row, row in double_iter(3):
             row_coords = []
@@ -1559,6 +1481,7 @@ class Sudoku(object):
         for block_col, col in double_iter(3):
             yield SudokuCoordinates(block_row, block_col, row, col)
 
+    ##
     # Iterator that yields lists, which contain the coordinates for every cell
     # that corresponds to a column in the sudoku grid.
     # For instance, for the following example grid:
@@ -1570,6 +1493,7 @@ class Sudoku(object):
     # The iterator would yield the following 3 lists, where the contents of each
     # list are coordinate objects for each cell.
     # [1, 4, 7], [2, 5, 8], [3, 6, 9]
+    ##
     def __column_coords_iter(self):
         for block_col, col in double_iter(3):
             col_coords = []
@@ -1586,6 +1510,7 @@ class Sudoku(object):
         for block_row, row in double_iter(3):
             yield SudokuCoordinates(block_row, block_col, row, col)
 
+    ##
     # Iterator that yields lists, which contain the coordinates for every cell
     # that corresponds to a block in the sudoku grid.
     # For instance, for the following example grid:
@@ -1599,6 +1524,7 @@ class Sudoku(object):
     # The iterator would yield the following 4 lists, where the contents of each
     # list are coordinate objects for each cell.
     # [1, 2, 5, 6], [3, 4, 7, 8], [9, 0, $, %], [*, @, ^, &]
+    ##
     def __block_coords_iter(self):
         for block_row, block_col in double_iter(3):
             block_coords = []
@@ -1614,9 +1540,6 @@ class Sudoku(object):
         '''
         for row, col in double_iter(3):
             yield SudokuCoordinates(block_row, block_col, row, col)
-    #
-    # Private Iterator Methods
-    ######### END
 
 
 class DictCounter(object):

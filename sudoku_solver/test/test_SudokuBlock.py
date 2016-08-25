@@ -1,6 +1,7 @@
 import unittest
 from sudoku_solver.SudokuBlock import SudokuBlock
 
+
 class TestSudokuBlock(unittest.TestCase):
     def setUp(self):
         numListStart = [['9', '7', ' '], [' ', ' ', ' '], ['5', '6', '3']]
