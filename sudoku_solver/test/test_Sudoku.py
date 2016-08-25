@@ -288,7 +288,7 @@ class TestSudoku(unittest.TestCase):
 
         self.assertNotEqual(sudokuObj1, sudokuObj2)
 
-    # test the output value of the gridValues method
+    # test the output value of the grid_values method
     def test_gridValues(self):
         startData = [
             ['4', ' ', ' ', '3', ' ', '8', ' ', ' ', '7'],
@@ -302,7 +302,7 @@ class TestSudoku(unittest.TestCase):
             ['1', ' ', ' ', '8', ' ', '6', ' ', ' ', '4'],
         ]
         sudokuObj = Sudoku(data=startData)
-        gridDataTest = sudokuObj.gridValues()
+        gridDataTest = sudokuObj.grid_values()
 
         gridData = [
             ['4', '.', '.', '3', '.', '8', '.', '.', '7'],
@@ -349,9 +349,9 @@ class TestSudoku(unittest.TestCase):
         ]
         sudokuObj1 = Sudoku(data=data1)
 
-        self.assertTrue(sudokuObj1.getCellValue(0, 0, 2, 1), 8)
-        self.assertTrue(sudokuObj1.getCellValue(2, 0, 0, 2), 4)
-        self.assertTrue(sudokuObj1.getCellValue(1, 1, 0, 1), 5)
+        self.assertTrue(sudokuObj1.get_cell_value(0, 0, 2, 1), 8)
+        self.assertTrue(sudokuObj1.get_cell_value(2, 0, 0, 2), 4)
+        self.assertTrue(sudokuObj1.get_cell_value(1, 1, 0, 1), 5)
 
     ###################
     # Private Methods #
