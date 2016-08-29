@@ -7,6 +7,14 @@ class TestSudokuBlock(unittest.TestCase):
         numListStart = [['9', '7', ' '], [' ', ' ', ' '], ['5', '6', '3']]
         self.sudokuBlockObj = SudokuBlock(numListStart)
 
+    def test_invalid_init(self):
+        with self.assertRaises(ValueError):
+            SudokuBlock([[3, 4, 5]])
+
+    def test_duplicate_num_load(self):
+        with self.assertRaises(ValueError):
+            SudokuBlock([['9', '3', ' '], [' ', ' ', ' '], ['5', '6', '3']])
+
     # Add missing values to the block using set_value and make sure
     # complete() method returns True
     def test_completeTrue(self):

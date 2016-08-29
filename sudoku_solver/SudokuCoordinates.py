@@ -10,16 +10,6 @@ class SudokuCoordinates(object):
         self.row = row
         self.col = col
 
-    def __repr__(self):
-        ''' Just for thoroughness '''
-        return '%s(%s,%s,%s,%s)' % (
-            self.__class__.__name__,
-            self.block_row,
-            self.block_col,
-            self.row,
-            self.col,
-        )
-
     def __hash__(self):
         ''' Allows for storing object in a set([]) and using a sets' methods correctly '''
         return hash((self.block_row, self.block_col, self.row, self.col))

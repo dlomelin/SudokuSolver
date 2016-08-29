@@ -155,27 +155,20 @@ class SudokuBlock(object):
             for j in xrange(len(self.__values[i])):
                 self.__values[i][j] = str(self.__values[i][j])
 
-    # Stores information related to the size of the input data
     def __store_square_data(self):
+        ''' Stores information related to the size of the input data '''
         self.__square_size = len(self.__values)
         self.__cell_count = self.__square_size ** 2
 
-    # Make sure the values passed in are in a valid format
     def __validate_num_list(self):
-        # Make sure the correct number of lists are passed in
-        list_len = len(self.__values)
-        if list_len != self.__square_size:
-            raise Exception(
-                'Invalid number of lists passed to SudokuBlock object.  '
-                'Must contain %s lists.' % (self.__square_size)
-            )
+        ''' Make sure the values passed in are in a valid format '''
 
         num_count = 0
         num_set = set()
         for item_list in self.__values:
             item_len = len(item_list)
             if item_len != self.__square_size:
-                raise Exception(
+                raise ValueError(
                     'Invalid number of items passed to SudokuBlock object.  '
                     'Must contain %s items.' % (self.__square_size)
                 )
@@ -183,9 +176,8 @@ class SudokuBlock(object):
                 if num.isdigit():
                     num_count += 1
                     num_set.add(num)
-        num_len = len(num_set)
-        if num_len != num_count:
-            raise Exception('Duplicate numbers pre-assigned to SudokuBlock object.')
+        if len(num_set) != num_count:
+            raise ValueError('Duplicate numbers pre-assigned to SudokuBlock object.')
 
     def __create_candidate_numbers(self):
         ''' Creates new notes for each of the N^2 cells '''

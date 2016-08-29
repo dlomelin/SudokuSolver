@@ -1,6 +1,5 @@
 '''.'''  # pylint: disable=too-many-lines
 
-import os
 import sys
 from itertools import combinations, chain
 
@@ -12,14 +11,14 @@ from sudoku_solver.SudokuCoordinates import SudokuCoordinates
 class Sudoku(object):
     ''' Class that provides interface to solving and visualizing Sudoku puzzles '''
 
-    def __init__(self, **args):
+    def __init__(self, **kwargs):
 
         # Make sure one of the required arguments was passed in
         fields_to_check = set(['file', 'data'])
-        self.__check_input_arguments(fields_to_check, args)
+        self.__check_input_arguments(fields_to_check, kwargs)
 
         # Loads the user specified data
-        self.__load_input_data(args)
+        self.__load_input_data(kwargs)
 
         # Mark this puzzle as unsolved
         self.__set_solved_false()
@@ -293,9 +292,6 @@ class Sudoku(object):
         ''' Clears out available candidates from the specified cell '''
         self.__matrix[block_row][block_col].clear_candidates(row, col)
 
-    def __valid_block(self, block_row, block_col):
-        return self.__matrix[block_row][block_col].valid()
-
     def __complete_block(self, block_row, block_col):
         return self.__matrix[block_row][block_col].complete()
 
@@ -525,46 +521,42 @@ class Sudoku(object):
         return candidates_union
 
     @staticmethod
-    def __check_input_arguments(fields_to_check, args):
+    def __check_input_arguments(fields_to_check, kwargs):
         # Check if one of the required arguments was supplied
         missing_fields = True
-        for field in args:
+        for field in kwargs:
             if field in fields_to_check:
                 missing_fields = False
 
         if missing_fields:
-            raise Exception(
+            raise MissingArguments(
                 'One of the following required fields was not provided: %s' % (
-                    ','.join(fields_to_check),
+                    ','.join(fields_to_check)
                 )
             )
 
-    # Loads the user specified data
-    def __load_input_data(self, args):
-        if 'file' in args:
+    def __load_input_data(self, kwargs):
+        ''' Loads the user specified data '''
+        if 'file' in kwargs:
             # Parses file with starting Sudoku numbers and loads object
-            self.__load_from_file(args['file'])
-        elif 'data' in args:
+            self.__load_from_file(kwargs['file'])
+        elif 'data' in kwargs:
             # Parses list of lists with starting Sudoku numbers and loads object
-            self.__load_from_data(args['data'])
+            self.__load_from_data(kwargs['data'])
 
     def __load_from_file(self, file_name):
         ''' Loads data from a file '''
-        if os.path.isfile(file_name):
-            data = []
+        data = []
 
-            # Converts file contents into a list of lists
-            fh_in = open(file_name, 'rU')
-            for line in fh_in:
-                nums = self.__parse_file_line(line)
-                data.append(nums)
-            fh_in.close()
+        # Converts file contents into a list of lists
+        fh_in = open(file_name, 'rU')
+        for line in fh_in:
+            nums = self.__parse_file_line(line)
+            data.append(nums)
+        fh_in.close()
 
-            # Loads data from a list of lists
-            self.__load_from_data(data)
-
-        else:
-            raise Exception('%s is not a valid file or does not exist.' % (file_name))
+        # Loads data from a list of lists
+        self.__load_from_data(data)
 
     # Loads data from a list of lists
     def __load_from_data(self, data):
@@ -937,10 +929,7 @@ class Sudoku(object):
             3: 'Sword-Fish',
             4: 'Jelly-Fish',
         }
-        try:
-            return techniques[cell_count]
-        except:
-            raise Exception('Invalid  size used: %s.  Please modify code' % (cell_count))
+        return techniques[cell_count]
 
     def __reduce_naked_sets(self):
         # Reduce naked sets by row
@@ -1052,10 +1041,7 @@ class Sudoku(object):
             3: 'Naked Trios',
             4: 'Naked Quads',
         }
-        try:
-            return techniques[set_size]
-        except:
-            raise Exception('Invalid naked set size used: %s.  Please modify code' % (set_size))
+        return techniques[set_size]
 
     def __reduce_ywing(self):
 
@@ -1421,8 +1407,8 @@ class Sudoku(object):
         # so if it gets here, then the puzzle is valid and solved
         self.__set_solved_true()
 
-    # Makes sure there are 9 unique elements in the iterator
     def __check_valid_cells(self, coord_iter, iter_type):
+        ''' Makes sure there are 9 unique elements in the iterator '''
 
         # Iterate through each row/column/block in the sudoku grid
         for cell_coordinates_list in coord_iter():
@@ -1439,7 +1425,6 @@ class Sudoku(object):
                 valid_nums.add(num)
 
             if len(valid_nums) != 9:
-                print self
                 raise Exception(
                     'Completed puzzle is not a valid solution.  %s contain duplicate entries.  '
                     'Check the starting puzzle or code to remove bugs.' % (iter_type)
@@ -1585,3 +1570,8 @@ class DictCounter(object):
         :return:  Integer - The number of elements in the dictionary
         '''
         return len(self.__counts)
+
+
+class MissingArguments(Exception):
+    '''.'''
+    pass

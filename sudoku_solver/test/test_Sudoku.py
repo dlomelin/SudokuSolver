@@ -1,7 +1,8 @@
 '''.'''
 
 import unittest
-from sudoku_solver.Sudoku import Sudoku
+import tempfile
+from sudoku_solver.Sudoku import Sudoku, MissingArguments
 
 
 class TestSudoku(unittest.TestCase):
@@ -229,16 +230,20 @@ class TestSudoku(unittest.TestCase):
 
         self.__validateSolver(startData, solvedData)
 
-    """
-    def test_template(self):
-        startData = [
-        ]
+    def test_missing_arguments(self):
+        with self.assertRaises(MissingArguments):
+            Sudoku()
 
-        solvedData = [
-        ]
-
-        self.__validateSolver(startData, solvedData)
-    """
+    def test_missing_file_load(self):
+        fh = tempfile.NamedTemporaryFile()
+        fh.write(
+            '97 652  8\n   7395 6\n563481279\n62734    \n815967423\n'
+            '43921    \n 56873   \n 9 52    \n   19',
+        )
+        fh.seek(0)
+        sudokuObj = Sudoku(file=fh.name)
+        sudokuObj.solve()
+        self.assertTrue(sudokuObj.complete())
 
     # Test that the __eq__ method returns True for the same data sets
     def test_eq(self):
@@ -318,6 +323,59 @@ class TestSudoku(unittest.TestCase):
 
         self.assertEqual(gridData, gridDataTest)
 
+    # Test that the string operator works as expected
+    def test_string(self):
+        data1 = [
+            ['4', '5', '2', '3', '1', '8', '9', '6', '7'],
+            ['3', '1', '6', '2', '7', '9', '5', '4', '8'],
+            ['9', '8', '7', '6', '5', '4', '3', '2', '1'],
+            ['2', '3', '1', '5', '8', '7', '4', '9', '6'],
+            ['6', '4', '8', '1', '9', '3', '2', '7', '5'],
+            ['5', '7', '9', '4', '6', '2', '8', '1', '3'],
+            ['7', '6', '4', '9', '3', '5', '1', '8', '2'],
+            ['8', '2', '5', '7', '4', '1', '6', '3', '9'],
+            ['1', '9', '3', '8', '2', '6', '7', '5', '4'],
+        ]
+        sudokuObj = Sudoku(data=data1)
+
+        self.assertEqual(
+            str(sudokuObj),
+            '        Incomplete       \n'
+            '-------------------------\n'
+            '| 4 5 2 | 3 1 8 | 9 6 7 |\n'
+            '| 3 1 6 | 2 7 9 | 5 4 8 |\n'
+            '| 9 8 7 | 6 5 4 | 3 2 1 |\n'
+            '-------------------------\n'
+            '| 2 3 1 | 5 8 7 | 4 9 6 |\n'
+            '| 6 4 8 | 1 9 3 | 2 7 5 |\n'
+            '| 5 7 9 | 4 6 2 | 8 1 3 |\n'
+            '-------------------------\n'
+            '| 7 6 4 | 9 3 5 | 1 8 2 |\n'
+            '| 8 2 5 | 7 4 1 | 6 3 9 |\n'
+            '| 1 9 3 | 8 2 6 | 7 5 4 |\n'
+            '-------------------------\n',
+        )
+
+        sudokuObj.solve()
+
+        self.assertEqual(
+            str(sudokuObj),
+            '         Solution        \n'
+            '-------------------------\n'
+            '| 4 5 2 | 3 1 8 | 9 6 7 |\n'
+            '| 3 1 6 | 2 7 9 | 5 4 8 |\n'
+            '| 9 8 7 | 6 5 4 | 3 2 1 |\n'
+            '-------------------------\n'
+            '| 2 3 1 | 5 8 7 | 4 9 6 |\n'
+            '| 6 4 8 | 1 9 3 | 2 7 5 |\n'
+            '| 5 7 9 | 4 6 2 | 8 1 3 |\n'
+            '-------------------------\n'
+            '| 7 6 4 | 9 3 5 | 1 8 2 |\n'
+            '| 8 2 5 | 7 4 1 | 6 3 9 |\n'
+            '| 1 9 3 | 8 2 6 | 7 5 4 |\n'
+            '-------------------------\n',
+        )
+
     # Test that the complete method returns True for a complete data set
     def test_complete(self):
         data1 = [
@@ -334,6 +392,23 @@ class TestSudoku(unittest.TestCase):
         sudokuObj1 = Sudoku(data=data1)
 
         self.assertTrue(sudokuObj1.complete())
+
+    # Test that the complete method returns False for a complete data set
+    def test_not_complete(self):
+        data1 = [
+            [' ', '2', ' ', ' ', '4', '3', ' ', '6', '9'],
+            [' ', ' ', '3', '8', '9', '6', '2', ' ', ' '],
+            ['9', '6', ' ', ' ', '2', '5', ' ', '3', ' '],
+            ['8', '9', ' ', '5', '6', ' ', ' ', '1', '3'],
+            ['6', ' ', ' ', ' ', '3', ' ', ' ', ' ', ' '],
+            [' ', '3', ' ', ' ', '8', '1', ' ', '2', '6'],
+            ['3', ' ', ' ', ' ', '1', ' ', ' ', '7', ' '],
+            [' ', ' ', '9', '6', '7', '4', '3', ' ', '2'],
+            ['2', '7', ' ', '3', '5', '8', ' ', '9', ' '],
+        ]
+        sudokuObj1 = Sudoku(data=data1)
+
+        self.assertFalse(sudokuObj1.complete())
 
     def test_getCellValue(self):
         data1 = [
